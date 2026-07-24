@@ -7,23 +7,19 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/DB_BarberNotes
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-
   liquibase:
     change-log: classpath:db/changelog/master.yaml
 
   jpa:
+    open-in-view: false
     hibernate:
-        ddl-auto: validate
+      ddl-auto: validate
 
 logging:
     level:
       org.springframework.security: DEBUG
       root: info
-      kg.job.jobsearch: debug
+      kg.barbernotes.barbernotes: debug
       com.zaxxer.hikari: error
       org.apache.tomcat: error
       liquibase: info

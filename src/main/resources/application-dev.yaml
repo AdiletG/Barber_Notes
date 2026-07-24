@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/db_barber_notes
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+logging:
+  file:
+    path: logs
+  level:
+    org.springframework.security: DEBUG
+    kg.barbernotes.barbernotes: debug
