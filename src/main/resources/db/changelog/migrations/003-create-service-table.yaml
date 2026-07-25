@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003
+      author: AdiletG
+      changes:
+        - createTable:
+            tableName: service
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: category_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(255)
+              - column:
+                  name: price
+                  type: numeric(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duration_minutes
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            constraintName: fk_service_category_for_service
+            baseTableName: service
+            baseColumnNames: category_id
+            referencedTableName: service_category
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - sql:
+            sql: "ALTER TABLE service ADD CONSTRAINT chk_status_service CHECK (status IN ('ACTIVE', 'INACTIVE'));"
+
+        - sql:
+            sql: "ALTER TABLE service ADD CONSTRAINT chk_price_service CHECK (price > 0);"
+
+        - sql:
+            sql: "ALTER TABLE service ADD CONSTRAINT chk_duration_minutes_service CHECK (duration_minutes > 0);"
+
+        - createIndex:
+            tableName: service
+            indexName: idx_service_status
+            unique: false
+            columns:
+              - column:
+                  name: status
+
+        - createIndex:
+            tableName: service
+            indexName: idx_service_category_id
+            unique: false
+            columns:
+              - column:
+                  name: category_id

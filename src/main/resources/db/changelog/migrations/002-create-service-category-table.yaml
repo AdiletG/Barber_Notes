@@ -1,0 +1,49 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002
+      author: AdiletG
+      changes:
+        - createTable:
+            tableName: service_category
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: description
+                  type: varchar(255)
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - sql:
+            sql: "ALTER TABLE service_category ADD CONSTRAINT chk_status_service_category CHECK (status IN ('ACTIVE', 'INACTIVE'));"
+
+        - createIndex:
+            tableName: service_category
+            indexName: idx_service_category_status
+            unique: false
+            columns:
+              - column:
+                  name: status

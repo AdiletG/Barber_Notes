@@ -1,0 +1,88 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005
+      author: AdiletG
+      changes:
+        - createTable:
+            tableName: barber_service
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: barber_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: service_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: barber_service
+            columnNames: barber_id, service_id
+            constraintName: uq_barber_service_id
+
+        - addForeignKeyConstraint:
+            constraintName: fk_barber_service_for_barber
+            baseTableName: barber_service
+            baseColumnNames: barber_id
+            referencedTableName: barber
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - addForeignKeyConstraint:
+            constraintName: fk_barber_service_for_service_id
+            baseTableName: barber_service
+            baseColumnNames: service_id
+            referencedTableName: service
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+
+        - sql:
+            sql: "ALTER TABLE barber_service ADD CONSTRAINT chk_status_barber_service CHECK (status IN ('ACTIVE', 'INACTIVE'));"
+
+        - createIndex:
+            tableName: barber_service
+            indexName: idx_barber_service_status
+            unique: false
+            columns:
+              - column:
+                  name: status
+
+        - createIndex:
+            tableName: barber_service
+            indexName: idx_barber_service_barber_id
+            unique: false
+            columns:
+              - column:
+                  name: barber_id
+
+        - createIndex:
+            tableName: barber_service
+            indexName: idx_barber_service_service_id
+            unique: false
+            columns:
+              - column:
+                  name: service_id
