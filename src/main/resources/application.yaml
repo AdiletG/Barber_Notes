@@ -1,0 +1,29 @@
+server:
+  port: 8101
+
+spring:
+  application:
+    name: BarberNotes
+  config:
+    import: optional:file:.env[.properties]
+
+  liquibase:
+    change-log: classpath:db/changelog/master.yaml
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+logging:
+    level:
+      org.springframework.security: DEBUG
+      root: info
+      kg.barbernotes.barbernotes: debug
+      com.zaxxer.hikari: error
+      org.apache.tomcat: error
+      liquibase: info
+    file:
+      path: logs
+    pattern:
+      file: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"

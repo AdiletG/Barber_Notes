@@ -1,0 +1,72 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001
+      author: AdiletG
+      changes:
+        - createTable:
+            tableName: branch
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: address
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: open_time
+                  type: TIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: close_time
+                  type: TIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: workplace_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - sql:
+            sql: "ALTER TABLE branch ADD CONSTRAINT chk_status_branch CHECK (status IN ('ACTIVE', 'INACTIVE'));"
+
+        - sql:
+            sql: "ALTER TABLE branch ADD CONSTRAINT chk_workplace_count CHECK (workplace_count IS NULL OR workplace_count > 0);"
+
+        - sql:
+            sql: "ALTER TABLE branch ADD CONSTRAINT chk_work_time_branch CHECK (open_time < close_time);"
+
+        - createIndex:
+            tableName: branch
+            indexName: idx_branch_status
+            unique: false
+            columns:
+              - column:
+                  name: status

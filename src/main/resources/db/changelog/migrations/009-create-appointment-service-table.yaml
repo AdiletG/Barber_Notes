@@ -1,0 +1,87 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009
+      author: AdiletG
+      changes:
+        - createTable:
+            tableName: appointment_service
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: appointment_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: service_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: service_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: numeric(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duration_minutes
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: appointment_service
+            columnNames: appointment_id, service_id
+            constraintName: uq_appointment_service_id
+
+        - addForeignKeyConstraint:
+            constraintName: fk_appointment_id_for_appointment_service
+            baseTableName: appointment_service
+            baseColumnNames: appointment_id
+            referencedTableName: appointment
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - addForeignKeyConstraint:
+            constraintName: fk_service_id_for_appointment_service
+            baseTableName: appointment_service
+            baseColumnNames: service_id
+            referencedTableName: service
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - sql:
+            sql: "ALTER TABLE appointment_service ADD CONSTRAINT chk_durations_minutes_appoinment_service CHECK (duration_minutes > 0);"
+
+        - sql:
+            sql: "ALTER TABLE appointment_service ADD CONSTRAINT chk_price_appoinment_service CHECK (price > 0);"
+
+        - createIndex:
+            tableName: appointment_service
+            indexName: idx_appointment_id_appointment_service
+            unique: false
+            columns:
+              - column:
+                  name: appointment_id
+
+        - createIndex:
+            tableName: appointment_service
+            indexName: idx_service_id_appointment_service
+            unique: false
+            columns:
+              - column:
+                  name: service_id

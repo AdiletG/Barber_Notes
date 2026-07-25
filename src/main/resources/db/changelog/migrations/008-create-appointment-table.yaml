@@ -1,0 +1,155 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008
+      author: AdiletG
+      changes:
+        - createTable:
+            tableName: appointment
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: appointment_number
+                  type: BIGINT
+                  generationType: ALWAYS
+                  startWith: 100001
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: customer_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: barber_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: branch_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: appointment_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_time
+                  type: TIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_duration_minutes
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_price
+                  type: numeric(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            constraintName: fk_appointment_for_customer
+            baseTableName: appointment
+            baseColumnNames: customer_id
+            referencedTableName: customer
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - addForeignKeyConstraint:
+            constraintName: fk_appointment_for_barber
+            baseTableName: appointment
+            baseColumnNames: barber_id
+            referencedTableName: barber
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - addForeignKeyConstraint:
+            constraintName: fk_appointment_for_branch
+            baseTableName: appointment
+            baseColumnNames: branch_id
+            referencedTableName: branch
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - sql:
+            sql: "ALTER TABLE appointment ADD CONSTRAINT chk_status_appointment CHECK (status IN ('CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'));"
+
+        - sql:
+            sql: "ALTER TABLE appointment ADD CONSTRAINT chk_source_appointment CHECK (source IN ('ONLINE', 'ADMIN', 'TELEGRAM'));"
+
+        - sql:
+            sql: "ALTER TABLE appointment ADD CONSTRAINT chk_total_duration_appointment CHECK (total_duration_minutes > 0);"
+
+        - sql:
+            sql: "ALTER TABLE appointment ADD CONSTRAINT chk_total_price_appointment CHECK (total_price > 0);"
+
+        - sql:
+            sql: "CREATE EXTENSION IF NOT EXISTS btree_gist;"
+
+        - sql:
+            sql: "ALTER TABLE appointment ADD COLUMN time_range tsrange GENERATED ALWAYS AS (tsrange((appointment_date + start_time), (appointment_date + start_time + interval '1 minute' * total_duration_minutes))) STORED;"
+        - sql:
+            sql: "ALTER TABLE appointment ADD CONSTRAINT excl_appointment_barber_overlap EXCLUDE USING gist (barber_id WITH =, time_range WITH &&) WHERE (status = 'CONFIRMED');"
+
+        - createIndex:
+            tableName: appointment
+            indexName: idx_barber_id_appointment_date_appointment
+            unique: false
+            columns:
+              - column:
+                  name: barber_id
+              - column:
+                  name: appointment_date
+
+        - createIndex:
+            tableName: appointment
+            indexName: idx_customer_appointment
+            unique: false
+            columns:
+              - column:
+                  name: customer_id
+
+        - createIndex:
+            tableName: appointment
+            indexName: idx_branch_id_appointment
+            unique: false
+            columns:
+              - column:
+                  name: branch_id
+
+        - createIndex:
+            tableName: appointment
+            indexName: idx_status_appointment
+            unique: false
+            columns:
+              - column:
+                  name: status
