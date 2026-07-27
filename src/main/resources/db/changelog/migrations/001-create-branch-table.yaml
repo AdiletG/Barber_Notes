@@ -58,7 +58,7 @@ databaseChangeLog:
             sql: "ALTER TABLE branch ADD CONSTRAINT chk_status_branch CHECK (status IN ('ACTIVE', 'INACTIVE'));"
 
         - sql:
-            sql: "ALTER TABLE branch ADD CONSTRAINT chk_workplace_count CHECK (workplace_count IS NULL OR workplace_count > 0);"
+            sql: "ALTER TABLE branch ADD CONSTRAINT chk_workplace_count CHECK (workplace_count > 0);"
 
         - sql:
             sql: "ALTER TABLE branch ADD CONSTRAINT chk_work_time_branch CHECK (open_time < close_time);"

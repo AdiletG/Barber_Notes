@@ -65,10 +65,10 @@ databaseChangeLog:
             onDelete: RESTRICT
 
         - sql:
-            sql: "ALTER TABLE appointment_service ADD CONSTRAINT chk_durations_minutes_appoinment_service CHECK (duration_minutes > 0);"
+            sql: "ALTER TABLE appointment_service ADD CONSTRAINT chk_durations_minutes_appointment_service CHECK (duration_minutes > 0);"
 
         - sql:
-            sql: "ALTER TABLE appointment_service ADD CONSTRAINT chk_price_appoinment_service CHECK (price > 0);"
+            sql: "ALTER TABLE appointment_service ADD CONSTRAINT chk_price_appointment_service CHECK (price > 0);"
 
         - createIndex:
             tableName: appointment_service
