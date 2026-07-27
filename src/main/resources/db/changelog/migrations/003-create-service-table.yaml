@@ -22,6 +22,7 @@ databaseChangeLog:
                   type: varchar(255)
                   constraints:
                     nullable: false
+                    unique: true
               - column:
                   name: description
                   type: varchar(255)
