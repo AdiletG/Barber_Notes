@@ -2,9 +2,9 @@ package kg.barbernotes.barbernotes.customer;
 
 import jakarta.persistence.*;
 import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
-import kg.barbernotes.barbernotes.common.AuditableEntity;
-import kg.barbernotes.barbernotes.common.Source;
-import kg.barbernotes.barbernotes.common.Status;
+import kg.barbernotes.barbernotes.common.entity.AuditableEntity;
+import kg.barbernotes.barbernotes.common.enums.Source;
+import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.Getter;
 import lombok.Setter;
 

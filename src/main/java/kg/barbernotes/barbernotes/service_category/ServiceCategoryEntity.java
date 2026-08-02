@@ -1,8 +1,8 @@
 package kg.barbernotes.barbernotes.service_category;
 
 import jakarta.persistence.*;
-import kg.barbernotes.barbernotes.common.AuditableEntity;
-import kg.barbernotes.barbernotes.common.Status;
+import kg.barbernotes.barbernotes.common.entity.AuditableEntity;
+import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.service.ServiceEntity;
 import lombok.Getter;
 import lombok.Setter;
