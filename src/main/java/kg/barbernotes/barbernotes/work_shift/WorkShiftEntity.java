@@ -22,9 +22,9 @@ public class WorkShiftEntity extends AuditableEntity {
     @Column(name = "work_date", nullable = false)
     private LocalDate workDate;
 
-    @Column(name = "start_time",  nullable = false)
+    @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
-    @Column(name = "end_time",   nullable = false)
+    @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 }
