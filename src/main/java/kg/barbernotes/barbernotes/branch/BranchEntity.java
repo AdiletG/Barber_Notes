@@ -3,8 +3,8 @@ package kg.barbernotes.barbernotes.branch;
 import jakarta.persistence.*;
 import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
 import kg.barbernotes.barbernotes.barber.BarberEntity;
-import kg.barbernotes.barbernotes.common.AuditableEntity;
-import kg.barbernotes.barbernotes.common.Status;
+import kg.barbernotes.barbernotes.common.entity.AuditableEntity;
+import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.Getter;
 import lombok.Setter;
 

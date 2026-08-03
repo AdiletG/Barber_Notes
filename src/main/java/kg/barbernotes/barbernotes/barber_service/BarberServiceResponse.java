@@ -1,6 +1,6 @@
 package kg.barbernotes.barbernotes.barber_service;
 
-import kg.barbernotes.barbernotes.common.Status;
+import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

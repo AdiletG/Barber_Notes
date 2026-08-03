@@ -2,7 +2,7 @@ package kg.barbernotes.barbernotes.appointment_service;
 
 import jakarta.persistence.*;
 import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
-import kg.barbernotes.barbernotes.common.BaseEntity;
+import kg.barbernotes.barbernotes.common.entity.BaseEntity;
 import kg.barbernotes.barbernotes.service.ServiceEntity;
 import lombok.Getter;
 import lombok.Setter;

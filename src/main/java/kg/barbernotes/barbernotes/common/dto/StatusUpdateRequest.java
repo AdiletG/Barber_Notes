@@ -1,7 +1,7 @@
 package kg.barbernotes.barbernotes.common.dto;
 
 import jakarta.validation.constraints.NotNull;
-import kg.barbernotes.barbernotes.common.Status;
+import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

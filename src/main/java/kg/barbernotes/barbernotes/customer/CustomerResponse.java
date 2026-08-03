@@ -1,7 +1,7 @@
 package kg.barbernotes.barbernotes.customer;
 
-import kg.barbernotes.barbernotes.common.Source;
-import kg.barbernotes.barbernotes.common.Status;
+import kg.barbernotes.barbernotes.common.enums.Source;
+import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

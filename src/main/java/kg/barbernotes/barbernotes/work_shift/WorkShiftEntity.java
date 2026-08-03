@@ -2,7 +2,7 @@ package kg.barbernotes.barbernotes.work_shift;
 
 import jakarta.persistence.*;
 import kg.barbernotes.barbernotes.barber.BarberEntity;
-import kg.barbernotes.barbernotes.common.AuditableEntity;
+import kg.barbernotes.barbernotes.common.entity.AuditableEntity;
 import lombok.Getter;
 import lombok.Setter;
 

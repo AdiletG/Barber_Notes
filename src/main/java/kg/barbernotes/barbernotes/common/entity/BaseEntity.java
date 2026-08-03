@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.common;
+package kg.barbernotes.barbernotes.common.entity;
 
 
 
