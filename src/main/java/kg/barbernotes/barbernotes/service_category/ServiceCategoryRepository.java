@@ -13,4 +13,5 @@ public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory
     Page<ServiceCategoryEntity> findAllByStatus(Status status, Pageable pageable);
     Optional<ServiceCategoryEntity> findByName(String name);
 
+    boolean existsByName(String name);
 }

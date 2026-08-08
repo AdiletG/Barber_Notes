@@ -14,4 +14,7 @@ public interface BarberRepository extends JpaRepository<BarberEntity, UUID> {
     Page<BarberEntity> findByBranchEntity_Id(UUID branchEntityId,  Pageable pageable);
     Page<BarberEntity> findByBranchEntity_IdAndStatus(UUID branchEntityId, Status status,  Pageable pageable);
     List<BarberEntity> findByBranchEntity_IdAndStatus(UUID branchEntityId, Status status);
+
+    List<BarberEntity> findAllByBranchEntity_Id(UUID branchEntityId);
+    boolean existsByPhoneNumber(String phoneNumber);
 }
