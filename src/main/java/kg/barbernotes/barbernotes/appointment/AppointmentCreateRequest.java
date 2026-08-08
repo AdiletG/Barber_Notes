@@ -22,6 +22,7 @@ public class AppointmentCreateRequest {
     @Pattern(regexp = "\\d{10,15}")
     private String customerPhoneNumber;
 
+    @NotBlank(message = "")
     private String customerName;
 
     @NotNull()
