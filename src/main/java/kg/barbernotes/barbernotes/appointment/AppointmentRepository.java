@@ -11,6 +11,10 @@ import java.util.UUID;
 
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, UUID> {
 
+    Page<AppointmentEntity> findAllByBranchEntity_Id(UUID branchId, Pageable pageable);
+    Page<AppointmentEntity> findAllByBarberEntity_Id(UUID barberId, Pageable pageable);
+    Page<AppointmentEntity> findAllByCustomerEntity_Id(UUID customerId, Pageable pageable);
+
     @Query("""
             SELECT a FROM AppointmentEntity a \
             WHERE (:status IS NULL OR a.status = :status) \
