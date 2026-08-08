@@ -8,13 +8,10 @@ import kg.barbernotes.barbernotes.barber.BarberService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
-import kg.barbernotes.barbernotes.common.enums.Source;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
-import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.exceptions.ScheduleConflictException;
 import kg.barbernotes.barbernotes.customer.CustomerEntity;
-import kg.barbernotes.barbernotes.customer.CustomerMapper;
 import kg.barbernotes.barbernotes.customer.CustomerRepository;
 import kg.barbernotes.barbernotes.service.ServiceEntity;
 import kg.barbernotes.barbernotes.service.ServiceService;
@@ -33,7 +30,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CreateAppointmentUseCase {
     private final CustomerRepository customerRepository;
-    private final CustomerMapper customerMapper;
     private final BarberService  barberService;
     private final BranchService branchService;
     private final ServiceService  serviceService;
