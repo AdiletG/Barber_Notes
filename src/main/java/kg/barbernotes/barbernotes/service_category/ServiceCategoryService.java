@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.service_category;
 
+import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.event.ServiceCategoryDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -24,7 +25,7 @@ public class ServiceCategoryService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public void update(UUID id, ServiceCategoryUpdateRequest request) {
+    public ServiceCategoryResponse update(UUID id, ServiceCategoryUpdateRequest request) {
         ServiceCategoryEntity category = serviceCategoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.SERVICE_CATEGORY_NOT_FOUND,
@@ -33,10 +34,11 @@ public class ServiceCategoryService {
 
         serviceCategoryMapper.updateEntityFromDto(request, category);
         serviceCategoryRepository.save(category);
+        return serviceCategoryMapper.toResponse(category);
     }
 
     @Transactional
-    public void create(ServiceCategoryCreateRequest request) {
+    public ServiceCategoryResponse create(ServiceCategoryCreateRequest request) {
         ServiceCategoryEntity category = serviceCategoryMapper.toEntity(request);
 
         if(serviceCategoryRepository.existsByName((category.getName()))){
@@ -48,28 +50,39 @@ public class ServiceCategoryService {
 
         category.setStatus(Status.ACTIVE);
         serviceCategoryRepository.save(category);
+        return serviceCategoryMapper.toResponse(category);
     }
 
     @Transactional
-    public void inactive(UUID id) {
+    public ServiceCategoryResponse inactive(UUID id, StatusUpdateRequest request) {
         ServiceCategoryEntity category = serviceCategoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.SERVICE_CATEGORY_NOT_FOUND,
                         "Категория с таким id отсутствует"
                 ));
 
-        if(category.getStatus() == Status.INACTIVE) {
+        if(category.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
+            category.setStatus(Status.INACTIVE);
+            serviceCategoryRepository.save(category);
+
+            eventPublisher.publishEvent(new ServiceCategoryDeactivatedEvent(id));
+        } else if (category.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
+            category.setStatus(Status.ACTIVE);
+            serviceCategoryRepository.save(category);
+        } else if (category.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Статус категория уже НЕАКТИВНЫЙ"
             );
+        }else {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус категория уже АКТИВНЫЙ"
+            );
         }
-
-        category.setStatus(Status.INACTIVE);
-        serviceCategoryRepository.save(category);
-
-        eventPublisher.publishEvent(new ServiceCategoryDeactivatedEvent(id));
+        return serviceCategoryMapper.toResponse(category);
     }
+
 
     @Transactional(readOnly = true)
     public Page<ServiceCategoryResponse> findAllByStatus(Status status, Pageable pageable) {
@@ -104,11 +117,8 @@ public class ServiceCategoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<ServiceCategoryResponse> getALLCategories() {
-
-       List <ServiceCategoryEntity> categoryResponse = serviceCategoryRepository.findAll();
-       return categoryResponse.stream()
-               .map(serviceCategoryMapper::toResponse)
-               .toList();
+    public Page<ServiceCategoryResponse> getALLCategories(Pageable pageable) {
+        return serviceCategoryRepository.findAll(pageable)
+                .map(serviceCategoryMapper::toResponse);
     }
 }
