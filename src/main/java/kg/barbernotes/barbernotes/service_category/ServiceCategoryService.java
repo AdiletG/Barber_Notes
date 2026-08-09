@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -54,7 +53,7 @@ public class ServiceCategoryService {
     }
 
     @Transactional
-    public ServiceCategoryResponse inactive(UUID id, StatusUpdateRequest request) {
+    public ServiceCategoryResponse updateStatus(UUID id, StatusUpdateRequest request) {
         ServiceCategoryEntity category = serviceCategoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.SERVICE_CATEGORY_NOT_FOUND,

@@ -47,6 +47,6 @@ public class ServiceCategoryController {
     @PutMapping("/{id}/status")
     public ServiceCategoryResponse inactive(
             @PathVariable UUID id, @Valid @RequestBody StatusUpdateRequest request){
-        return serviceCategoryService.inactive(id, request);
+        return serviceCategoryService.updateStatus(id, request);
     }
 }
