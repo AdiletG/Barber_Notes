@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.service;
 
+import jakarta.validation.Valid;
 import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -18,7 +19,9 @@ public class ServiceController {
 
     @GetMapping
     public PageResponse<ServiceResponse> findAll(
-            Pageable pageable, @RequestParam(required = false) Status status, UUID categoryId
+            Pageable pageable,
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) UUID categoryId
             ){
         if(status == null && categoryId == null){
             return PageResponse.of(serviceService.findAll(pageable));
@@ -38,17 +41,17 @@ public class ServiceController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ServiceResponse create(@RequestBody ServiceCreateRequest request){
+    public ServiceResponse create (@Valid @RequestBody ServiceCreateRequest request){
         return serviceService.create(request);
     }
 
     @PutMapping("/{id}")
-    public ServiceResponse update(@PathVariable UUID id, @RequestBody ServiceUpdateRequest request){
+    public ServiceResponse update(@PathVariable UUID id, @Valid @RequestBody ServiceUpdateRequest request){
         return serviceService.update(id, request);
     }
 
     @PutMapping("/{id}/status")
-    public ServiceResponse updateStatus(@PathVariable UUID id, @RequestBody StatusUpdateRequest request){
+    public ServiceResponse updateStatus(@PathVariable UUID id, @Valid @RequestBody StatusUpdateRequest request){
         return serviceService.updateStatus(id, request);
     }
 }

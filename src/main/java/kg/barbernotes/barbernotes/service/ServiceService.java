@@ -79,7 +79,7 @@ public class ServiceService {
             service.setStatus(Status.INACTIVE);
             serviceRepository.save(service);
         } else if (service.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
-            service.setStatus(Status.INACTIVE);
+            service.setStatus(Status.ACTIVE);
             serviceRepository.save(service);
         }else if(service.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE){
             throw new BusinessRuleViolationException(
