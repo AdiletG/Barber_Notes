@@ -34,7 +34,7 @@ public class BarberService {
                         "Барбер с таким id отсутствует"
                 ));
 
-        if(request.getBranchId() != null && !branchService.existsById(request.getBranchId())){
+        if(request.getBranchId() != null && branchService.existsById(request.getBranchId())){
             throw new EntityNotFoundException(
                     ErrorCode.BRANCH_NOT_FOUND,
                     "Филиал с таким id отсутствуют"
@@ -58,7 +58,7 @@ public class BarberService {
             );
         }
 
-        if(!branchService.existsById(request.getBranchId())){
+        if(branchService.existsById(request.getBranchId())){
             throw new EntityNotFoundException(
                     ErrorCode.BRANCH_NOT_FOUND,
                     "Филиал с таким id отсутствуют"

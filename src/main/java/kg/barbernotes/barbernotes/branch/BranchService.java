@@ -89,6 +89,15 @@ public class BranchService {
     }
 
     @Transactional(readOnly = true)
+    public BranchEntity getById(UUID id) {
+        return branchRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.BRANCH_NOT_FOUND,
+                        "Филиал с таким id отсутствуют"
+                ));
+    }
+
+    @Transactional(readOnly = true)
     public BranchResponse findById(UUID id) {
         BranchEntity branch = branchRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
