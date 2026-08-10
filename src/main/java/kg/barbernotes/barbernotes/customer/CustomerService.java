@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.customer;
 
+import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
@@ -19,33 +20,53 @@ public class CustomerService {
     private final CustomerMapper customerMapper;
 
     @Transactional
-    public void update(UUID id, CustomerUpdateRequest request){
+    public CustomerResponse update(UUID id, CustomerUpdateRequest request){
         CustomerEntity customer = customerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.CUSTOMER_NOT_FOUND,
                         "Пользователь с таким id не существует"
                 ));
         customerMapper.updateCustomer(request, customer);
+        customer = customerRepository.save(customer);
+        return customerMapper.toResponse(customer);
     }
 
     @Transactional
-    public void inactive(UUID id) {
+    public CustomerResponse updateStatus(UUID id, StatusUpdateRequest request) {
         CustomerEntity customer = customerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.CUSTOMER_NOT_FOUND,
                         "Пользователь с таким id не существует"
                 ));
-        if (customer.getStatus() == Status.ACTIVE) {
+        if (customer.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
             customer.setStatus(Status.INACTIVE);
-        }else {
+            customerRepository.save(customer);
+        } else if (customer.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
+            customer.setStatus(Status.ACTIVE);
+            customerRepository.save(customer);
+        } else if (customer.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Статус пользователя уже НЕАКТИВЕН"
             );
+        } else {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус пользователя уже АКТИВЕН"
+            );
         }
-        customerRepository.save(customer);
+        return customerMapper.toResponse(customer);
     }
 
+    @Transactional(readOnly = true)
+    public CustomerResponse findById(UUID id) {
+        return customerRepository.findById(id)
+                .map(customerMapper::toResponse)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Пользователь с таким id не существует"
+                ));
+    }
 
     @Transactional(readOnly = true)
     public Page<CustomerResponse> findByStatus(Status status, Pageable pageable) {
@@ -54,12 +75,14 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
-    public CustomerResponse findByPhoneNumber(String phoneNumber) {
-        return customerRepository.findByPhoneNumber(phoneNumber)
-                .map(customerMapper::toResponse)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.CUSTOMER_NOT_FOUND,
-                        "Пользователя с таким номером не существует"
-                ));
+    public Page<CustomerResponse> findAll(Pageable pageable) {
+        return customerRepository.findAll(pageable)
+                .map(customerMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CustomerResponse> findByPhoneNumber(String phoneNumber,  Pageable pageable) {
+        return customerRepository.findByPhoneNumber(phoneNumber, pageable)
+                .map(customerMapper::toResponse);
     }
 }

@@ -1,6 +1,5 @@
 package kg.barbernotes.barbernotes.appointment;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

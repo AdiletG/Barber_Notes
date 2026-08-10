@@ -10,6 +10,6 @@ import java.util.UUID;
 
 public interface CustomerRepository extends JpaRepository<CustomerEntity, UUID> {
 
-    Optional<CustomerEntity>findByPhoneNumber(String phoneNumber);
+    Page<CustomerEntity>findByPhoneNumber(String phoneNumber, Pageable pageable);
     Page<CustomerEntity> findByStatus(Status status, Pageable pageable);
 }
