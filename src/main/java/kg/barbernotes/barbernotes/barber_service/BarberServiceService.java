@@ -2,6 +2,7 @@ package kg.barbernotes.barbernotes.barber_service;
 
 import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.barber.BarberService;
+import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.event.BarberServiceDeactivatedEvent;
@@ -11,8 +12,6 @@ import kg.barbernotes.barbernotes.service.ServiceEntity;
 import kg.barbernotes.barbernotes.service.ServiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +29,7 @@ public class BarberServiceService {
 
 
     @Transactional
-    public void create(UUID barberId, AddBarberServiceRequest request){
+    public BarberServiceResponse create(UUID barberId, AddBarberServiceRequest request){
         BarberEntity barber = barberService.getById(barberId);
         ServiceEntity service = serviceService.getById(request.getServiceId());
 
@@ -56,40 +55,65 @@ public class BarberServiceService {
         }
 
         barberServiceRepository.save(entityToSave);
+        return barberServiceMapper.toResponse(entityToSave);
     }
 
     @Transactional
-    public void inactive(UUID barberId, UUID serviceId) {
+    public BarberServiceResponse updateStatus(UUID barberId, UUID serviceId, StatusUpdateRequest request) {
         BarberServiceEntity serviceEntity = barberServiceRepository
                 .findByBarberEntity_IdAndServiceEntity_Id(barberId, serviceId)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.SERVICE_NOT_FOUND,
+                        ErrorCode.BARBER_SERVICE_NOT_FOUND,
                         "Такой сервис у барбера не существует"
                 ));
 
-        if(serviceEntity.getStatus() == Status.ACTIVE) {
+        if(serviceEntity.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
             serviceEntity.setStatus(Status.INACTIVE);
-        }else {
+            barberServiceRepository.save(serviceEntity);
+        }else if(serviceEntity.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
+            serviceEntity.setStatus(Status.ACTIVE);
+            barberServiceRepository.save(serviceEntity);
+        } else if (serviceEntity.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Статус сервиса у барбера уже НЕАКТИВЕН"
             );
+        }else {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус сервиса у барбера уже АКТИВЕН"
+            );
         }
 
-        barberServiceRepository.save(serviceEntity);
+        return barberServiceMapper.toResponse(serviceEntity);
     }
-
 
     @Transactional
     @EventListener
     public void deactivatedBarberService(BarberServiceDeactivatedEvent event) {
-        List<BarberServiceEntity> serviceService = barberServiceRepository
+        List<BarberServiceEntity> serviceServiceEntity = barberServiceRepository
                 .findByBarberEntity_IdAndStatus(event.getBarberId(), Status.ACTIVE);
-        serviceService.forEach(service -> service.setStatus(Status.INACTIVE));
+        serviceServiceEntity.forEach(service -> service.setStatus(Status.INACTIVE));
     }
 
     @Transactional(readOnly = true)
-    public List<BarberServiceResponse> getByBarberIdStatusList(UUID barberId, Status status) {
+    public List<BarberServiceResponse> getByBarberIdServiceId(UUID barberId, UUID serviceId) {
+        return barberServiceRepository.findByBarberEntity_IdAndServiceEntity_Id(barberId, serviceId)
+                .stream()
+                .map(barberServiceMapper::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BarberServiceResponse> findByBarberId(UUID barberId) {
+        return barberServiceRepository.findByBarberEntity_Id(barberId)
+                .stream()
+                .map(barberServiceMapper::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BarberServiceResponse> getByBarberStatus(UUID barberId, Status status) {
         return barberServiceRepository.findByBarberEntity_IdAndStatus(barberId, status)
                 .stream()
                 .map(barberServiceMapper::toResponse)
@@ -97,24 +121,10 @@ public class BarberServiceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<BarberServiceResponse> getByBarberId(UUID barberId, Pageable pageable) {
-        return barberServiceRepository.findByBarberEntity_Id(barberId, pageable)
-                .map(barberServiceMapper::toResponse);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<BarberServiceResponse> getByBarberStatusPage(UUID barberId, Status status, Pageable pageable) {
-        return barberServiceRepository.findByBarberEntity_IdAndStatus(barberId, status, pageable)
-                .map(barberServiceMapper::toResponse);
-    }
-
-    @Transactional(readOnly = true)
-    public BarberServiceResponse findByBarberAndService(UUID barberId, UUID serviceId) {
-        return barberServiceRepository.findByBarberEntity_IdAndServiceEntity_Id(barberId, serviceId)
+    public List<BarberServiceResponse> findByBarberIdAndServiceIdAndStatus(UUID barberId, UUID serviceId, Status status) {
+        return barberServiceRepository.findByBarberEntity_IdAndServiceEntity_IdAndStatus(
+                barberId, serviceId, status).stream()
                 .map(barberServiceMapper::toResponse)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.BARBER_SERVICE_NOT_FOUND,
-                        "Данный сервис отсутствует у барбера"
-                ));
+                .toList();
     }
 }

@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.service;
 
+import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.event.ServiceCategoryDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -24,7 +25,7 @@ public class ServiceService {
     private final ServiceCategoryService categoryService;
 
     @Transactional
-    public void update(UUID id, ServiceUpdateRequest request){
+    public ServiceResponse update(UUID id, ServiceUpdateRequest request){
         ServiceEntity service = serviceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.SERVICE_NOT_FOUND,
@@ -40,10 +41,11 @@ public class ServiceService {
 
         serviceMapper.updateEntityFromDto(request,service);
         serviceRepository.save(service);
+        return serviceMapper.toResponse(service);
     }
     
     @Transactional
-    public void create(ServiceCreateRequest request) {
+    public ServiceResponse create(ServiceCreateRequest request) {
 
         if(!categoryService.existsById(request.getCategoryId())){
             throw new EntityNotFoundException(
@@ -62,25 +64,35 @@ public class ServiceService {
         ServiceEntity service = serviceMapper.toEntity(request);
         service.setStatus(Status.ACTIVE);
         serviceRepository.save(service);
+        return serviceMapper.toResponse(service);
     }
 
     @Transactional
-    public void inactive(UUID id) {
+    public ServiceResponse updateStatus(UUID id, StatusUpdateRequest request) {
         ServiceEntity service = serviceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.SERVICE_NOT_FOUND,
                         "Сервис с таким id отсутствует"
                 ));
-        if(service.getStatus().equals(Status.INACTIVE)){
+
+        if(service.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE){
+            service.setStatus(Status.INACTIVE);
+            serviceRepository.save(service);
+        } else if (service.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
+            service.setStatus(Status.ACTIVE);
+            serviceRepository.save(service);
+        }else if(service.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Статус сервиса уже НЕАКТИВНЫЙ"
             );
+        }else {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус сервиса уже АКТИВНЫЙ"
+            );
         }
-        
-        service.setStatus(Status.INACTIVE);
-        serviceRepository.save(service);
-        
+        return serviceMapper.toResponse(service);
     }
 
     @Transactional
@@ -125,7 +137,14 @@ public class ServiceService {
         return serviceRepository.findByServiceCategoryEntity_IdAndStatus(categoryId,status, pageable)
                 .map(serviceMapper::toResponse);
     }
-    
+
+    @Transactional(readOnly = true)
+    public Page<ServiceResponse> findAll(Pageable pageable) {
+        return serviceRepository.findAll(pageable)
+                .map(serviceMapper::toResponse);
+    }
+
+
     @Transactional(readOnly = true)
     public Page<ServiceResponse> findAllByStatus(Status status, Pageable pageable) {
         return serviceRepository.findAllByStatus(status, pageable)

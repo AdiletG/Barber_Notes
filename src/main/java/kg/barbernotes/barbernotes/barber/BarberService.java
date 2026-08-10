@@ -1,6 +1,7 @@
 package kg.barbernotes.barbernotes.barber;
 
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.event.BarberServiceDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.event.BranchDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
@@ -27,14 +28,14 @@ public class BarberService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public void update(UUID id, BarberUpdateRequest request) {
+    public BarberResponse update(UUID id, BarberUpdateRequest request) {
         BarberEntity barber = barberRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.BARBER_NOT_FOUND,
                         "Барбер с таким id отсутствует"
                 ));
 
-        if(request.getBranchId() != null && branchService.existsById(request.getBranchId())){
+        if(request.getBranchId() != null && !branchService.existsById(request.getBranchId())){
             throw new EntityNotFoundException(
                     ErrorCode.BRANCH_NOT_FOUND,
                     "Филиал с таким id отсутствуют"
@@ -42,12 +43,12 @@ public class BarberService {
         }
 
         barberMapper.updateBarber(request,  barber);
-
         barberRepository.save(barber);
+        return barberMapper.toResponse(barber);
     }
 
     @Transactional
-    public void create(BarberCreateRequest request){
+    public BarberResponse create(BarberCreateRequest request){
 
 
         if(barberRepository.existsByPhoneNumber(
@@ -58,7 +59,7 @@ public class BarberService {
             );
         }
 
-        if(branchService.existsById(request.getBranchId())){
+        if(!branchService.existsById(request.getBranchId())){
             throw new EntityNotFoundException(
                     ErrorCode.BRANCH_NOT_FOUND,
                     "Филиал с таким id отсутствуют"
@@ -66,8 +67,8 @@ public class BarberService {
         }
 
         BarberEntity barber = barberMapper.toEntity(request);
-
         barberRepository.save(barber);
+        return barberMapper.toResponse(barber);
     }
 
     @Transactional
@@ -79,24 +80,34 @@ public class BarberService {
     }
 
     @Transactional
-    public void inactive(UUID id) {
+    public BarberResponse updateStatus(UUID id, StatusUpdateRequest request) {
         BarberEntity barber = barberRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.BARBER_NOT_FOUND,
                         "Барбер с таким id отсутствует"
                 ));
 
-        if(barber.getStatus() == Status.INACTIVE) {
+        if(barber.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
+            barber.setStatus(Status.INACTIVE);
+            barberRepository.save(barber);
+
+            eventPublisher.publishEvent(new BarberServiceDeactivatedEvent(id));
+        } else if (barber.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
+            barber.setStatus(Status.ACTIVE);
+            barberRepository.save(barber);
+        } else if (barber.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Статус барбера уже НЕАКТИВНЫЙ"
             );
+        }else {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус барбера уже АКТИВНЫЙ"
+            );
         }
 
-        barber.setStatus(Status.INACTIVE);
-        barberRepository.save(barber);
-
-        eventPublisher.publishEvent(new BarberServiceDeactivatedEvent(id));
+        return barberMapper.toResponse(barber);
     }
 
 

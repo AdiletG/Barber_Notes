@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.branch;
 
+import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.event.BranchDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -12,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -24,7 +24,7 @@ public class BranchService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public void update(UUID id, BranchUpdateRequest request){
+    public BranchResponse update(UUID id, BranchUpdateRequest request){
         BranchEntity branch = branchRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BRANCH_NOT_FOUND));
 
@@ -38,10 +38,11 @@ public class BranchService {
         }
 
         branchRepository.save(branch);
+        return branchMapper.toResponse(branch);
     }
 
     @Transactional
-    public void create(BranchCreateRequest request) {
+    public BranchResponse create(BranchCreateRequest request) {
         BranchEntity branch =  branchMapper.toEntity(request);
 
         if(!branch.getOpenTime().isBefore(branch.getCloseTime())){
@@ -53,28 +54,43 @@ public class BranchService {
 
         branch.setStatus(Status.ACTIVE);
         branchRepository.save(branch);
+        return branchMapper.toResponse(branch);
     }
 
     @Transactional
 
-    public void inactive(UUID id) {
+    public BranchResponse inactive(UUID id, StatusUpdateRequest request) {
         BranchEntity branch = branchRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.BRANCH_NOT_FOUND,
                         "Филиал с таким id отсутствует"
                 ));
 
-        if(branch.getStatus() == Status.INACTIVE){
+        if(branch.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE){
+            branch.setStatus(request.getStatus());
+            branchRepository.save(branch);
+
+            eventPublisher.publishEvent(new BranchDeactivatedEvent(id));
+
+        }else if(branch.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE){
+            branch.setStatus(request.getStatus());
+            branchRepository.save(branch);
+        }
+
+        else if(branch.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Статус филиала уже НЕАКТИВНЫЙ"
             );
+
+        }else {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус филиала уже АКТИВНЫЙ"
+            );
         }
 
-        branch.setStatus(Status.INACTIVE);
-        branchRepository.save(branch);
-
-        eventPublisher.publishEvent(new BranchDeactivatedEvent(id));
+        return branchMapper.toResponse(branch);
     }
 
     @Transactional(readOnly = true)
@@ -120,10 +136,7 @@ public class BranchService {
     }
 
     @Transactional(readOnly = true)
-    public List<BranchResponse> getAllBranches() {
-        List<BranchEntity> branch = branchRepository.findAll();
-                return branch.stream()
-                        .map(branchMapper::toResponse)
-                        .toList();
+    public Page<BranchResponse> getAllBranches(Pageable pageable) {
+        return branchRepository.findAll(pageable).map(branchMapper::toResponse);
     }
 }

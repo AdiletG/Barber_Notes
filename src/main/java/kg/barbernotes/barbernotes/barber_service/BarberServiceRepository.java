@@ -12,7 +12,8 @@ import java.util.UUID;
 public interface BarberServiceRepository extends JpaRepository<BarberServiceEntity, UUID> {
 
     Optional<BarberServiceEntity> findByBarberEntity_IdAndServiceEntity_Id(UUID barberId, UUID serviceEntityId);
-    Page<BarberServiceEntity> findByBarberEntity_IdAndStatus(UUID barberId, Status status, Pageable pageable);
-    Page<BarberServiceEntity> findByBarberEntity_Id(UUID barberId, Pageable pageable);
+    List<BarberServiceEntity> findByBarberEntity_IdAndServiceEntity_IdAndStatus(
+            UUID barberId, UUID serviceId, Status status);
+    List<BarberServiceEntity> findByBarberEntity_Id(UUID barberId);
     List<BarberServiceEntity> findByBarberEntity_IdAndStatus(UUID barberId, Status status);
 }

@@ -14,6 +14,10 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
     Page<AppointmentEntity> findAllByBranchEntity_Id(UUID branchId, Pageable pageable);
     Page<AppointmentEntity> findAllByBarberEntity_Id(UUID barberId, Pageable pageable);
     Page<AppointmentEntity> findAllByCustomerEntity_Id(UUID customerId, Pageable pageable);
+    Page<AppointmentEntity> findAllByStatus(AppointmentStatus status, Pageable pageable);
+
+    Boolean existsByBarberEntity_IdAndAppointmentDateAndStatus(
+            UUID barberEntity, LocalDate date, AppointmentStatus status);
 
     @Query("""
             SELECT a FROM AppointmentEntity a \
@@ -32,5 +36,4 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
             @Param("toDate") LocalDate toDate,
             Pageable pageable
     );
-
 }
