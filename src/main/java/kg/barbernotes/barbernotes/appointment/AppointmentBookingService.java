@@ -77,18 +77,6 @@ public class AppointmentBookingService {
     }
 
     @Transactional(readOnly = true)
-    public Page<AppointmentResponse> findAllFromBarberId(UUID barberId, Pageable pageable) {
-        return appointmentRepository.findAllByBarberEntity_Id(barberId, pageable)
-                .map(appointmentMapper::toResponse);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<AppointmentResponse> findAllFromBranchId(UUID branchId, Pageable pageable) {
-        return appointmentRepository.findAllByBranchEntity_Id(branchId, pageable)
-                .map(appointmentMapper::toResponse);
-    }
-
-    @Transactional(readOnly = true)
     public Page<AppointmentResponse> findALLFromFilters(
             AppointmentStatus status, UUID branchId, UUID barberId, UUID customerId,
             LocalDate dateFrom, LocalDate dateTo, Pageable pageable
@@ -96,17 +84,6 @@ public class AppointmentBookingService {
         return appointmentRepository.findAllWithFilters(
                 status, branchId, barberId, customerId, dateFrom, dateTo, pageable
         ).map(appointmentMapper::toResponse);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<AppointmentResponse> findALLStatus(AppointmentStatus status, Pageable pageable){
-        return appointmentRepository.findAllByStatus(status, pageable)
-                .map(appointmentMapper::toResponse);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<AppointmentResponse> findAll(Pageable pageable){
-        return appointmentRepository.findAll(pageable).map(appointmentMapper::toResponse);
     }
 
 }

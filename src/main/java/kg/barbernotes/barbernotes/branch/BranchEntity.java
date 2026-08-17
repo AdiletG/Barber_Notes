@@ -5,6 +5,7 @@ import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
 import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.common.entity.AuditableEntity;
 import kg.barbernotes.barbernotes.common.enums.Status;
+import kg.barbernotes.barbernotes.staff_account.StaffAccountEntity;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,4 +42,7 @@ public class BranchEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "branchEntity")
     private List<AppointmentEntity> appointmentEntities;
+
+    @OneToMany(mappedBy = "branchEntity")
+    private List<StaffAccountEntity> staffAccountEntities;
 }
