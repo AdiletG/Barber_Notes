@@ -27,3 +27,13 @@ logging:
       path: logs
     pattern:
       file: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    customer:
+      access-ttl-minutes: 60
+      refresh-ttl-minutes: 43200
+    staff:
+      access-ttl-minutes: 15
+      refresh-ttl-minutes: 10080
