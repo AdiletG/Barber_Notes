@@ -4,7 +4,6 @@ import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.exceptions.InvalidTokenException;
 import kg.barbernotes.barbernotes.common.exceptions.TokenReuseDetectedException;
-import kg.barbernotes.barbernotes.common.security.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +38,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public String rotate(String oldRawToken){
+    public RotatedRefreshToken rotate(String oldRawToken){
 
         String tokenHash = jwtService.hashToken(oldRawToken);
         RefreshTokenEntity findTokenHash = refreshTokenRepository.findByTokenHash(tokenHash)
@@ -68,7 +67,7 @@ public class RefreshTokenService {
         findTokenHash.setReplacedById(newRowToken.entityId());
         refreshTokenRepository.save(findTokenHash);
 
-        return newRowToken.rawToken();
+        return new RotatedRefreshToken(newRowToken.rawToken(), findTokenHash.getSubjectId(), findTokenHash.getSubjectType());
     }
 
     private void revokeAllForSubject(UUID subjectId) {
@@ -80,5 +79,7 @@ public class RefreshTokenService {
     }
 
     public record IssuedRefreshToken(String rawToken, UUID entityId) {}
+    public record RotatedRefreshToken(String rawRefreshToken, UUID subjectId, SubjectType subjectType) {}
+
 
 }
