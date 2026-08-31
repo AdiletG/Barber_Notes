@@ -70,6 +70,12 @@ public class RefreshTokenService {
         return new RotatedRefreshToken(newRowToken.rawToken(), findTokenHash.getSubjectId(), findTokenHash.getSubjectType());
     }
 
+    public void revokeByRawToken(String rawToken) {
+        String tokenHash = jwtService.hashToken(rawToken);
+        refreshTokenRepository.findByTokenHash(tokenHash)
+                .ifPresent(entity -> revokeAllForSubject(entity.getSubjectId()));
+    }
+
     private void revokeAllForSubject(UUID subjectId) {
         List<RefreshTokenEntity> list = refreshTokenRepository.findAllBySubjectIdAndRevokedAtIsNull(subjectId);
         for (RefreshTokenEntity refreshTokenEntity : list) {
