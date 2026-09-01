@@ -30,7 +30,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/api/v1/service-categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/services/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/barbers/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/appointments/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/barbers/*/shifts/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/appointments").permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

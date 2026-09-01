@@ -76,7 +76,7 @@ public class RefreshTokenService {
                 .ifPresent(entity -> revokeAllForSubject(entity.getSubjectId()));
     }
 
-    private void revokeAllForSubject(UUID subjectId) {
+    public void revokeAllForSubject(UUID subjectId) {
         List<RefreshTokenEntity> list = refreshTokenRepository.findAllBySubjectIdAndRevokedAtIsNull(subjectId);
         for (RefreshTokenEntity refreshTokenEntity : list) {
             refreshTokenEntity.setRevokedAt(OffsetDateTime.now(ZoneOffset.UTC));

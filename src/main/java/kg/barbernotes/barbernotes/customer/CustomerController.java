@@ -7,6 +7,7 @@ import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Pageable;
 
@@ -21,12 +22,14 @@ public class CustomerController {
     private final AppointmentBookingService appointmentBookingService;
 
     @GetMapping("/{customerId}/appointments")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public PageResponse<AppointmentResponse> getCustomerAppointments(
             @PathVariable UUID customerId, Pageable pageable) {
         return PageResponse.of(appointmentBookingService.findAllFromCustomerId(customerId, pageable));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public PageResponse<CustomerResponse> getAllCustomers(
             Pageable pageable,
             @RequestParam(required = false) Status status,
@@ -41,11 +44,13 @@ public class CustomerController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public CustomerResponse getCustomerByPhone(@PathVariable UUID id) {
         return customerService.findById(id);
     }
 
     @PutMapping("/{customerId}")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public CustomerResponse update(
             @PathVariable UUID customerId,
             @Valid @RequestBody CustomerUpdateRequest request
@@ -54,6 +59,7 @@ public class CustomerController {
     }
 
     @PutMapping("/{customerId}/status")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public CustomerResponse updateStatus(
             @PathVariable UUID customerId,
             @Valid @RequestBody StatusUpdateRequest request

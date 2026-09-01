@@ -7,6 +7,7 @@ import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -40,17 +41,20 @@ public class ServiceController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public ServiceResponse create (@Valid @RequestBody ServiceCreateRequest request){
         return serviceService.create(request);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ServiceResponse update(@PathVariable UUID id, @Valid @RequestBody ServiceUpdateRequest request){
         return serviceService.update(id, request);
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ServiceResponse updateStatus(@PathVariable UUID id, @Valid @RequestBody StatusUpdateRequest request){
         return serviceService.updateStatus(id, request);
     }

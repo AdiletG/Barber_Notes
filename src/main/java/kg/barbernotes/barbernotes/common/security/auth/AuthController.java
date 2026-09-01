@@ -7,15 +7,18 @@ import jakarta.validation.Valid;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.InvalidTokenException;
 import kg.barbernotes.barbernotes.common.security.auth.dto.AuthResult;
+import kg.barbernotes.barbernotes.common.security.auth.dto.ChangePasswordRequest;
 import kg.barbernotes.barbernotes.common.security.auth.dto.StaffLoginRequest;
 import kg.barbernotes.barbernotes.common.security.auth.dto.StaffLoginResponse;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -25,6 +28,24 @@ public class AuthController {
     private final JwtProperties  jwtProperties;
     private static final String REFRESH_COOKIE_NAME =  "refresh_token";
 
+
+    @PostMapping("/change-password")
+    public StaffLoginResponse changePassword(
+            @Valid @RequestBody ChangePasswordRequest changePasswordRequest,
+            HttpServletResponse response) {
+
+        String subjectId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UUID staffAccountId = UUID.fromString(subjectId);
+
+        AuthResult  authResult = authService.changePassword(staffAccountId, changePasswordRequest);
+
+        ResponseCookie responseCookie = buildRefreshCookie(authResult.getRefreshToken());
+
+        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+
+        return new StaffLoginResponse(authResult.getAccessToken());
+    }
+
     @PostMapping("/staff-logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         Cookie[] cookies = request.getCookies();
@@ -33,9 +54,6 @@ public class AuthController {
             for(Cookie cookie : cookies){
                 if(REFRESH_COOKIE_NAME.equals(cookie.getName())) {
                     authService.logout(cookie.getValue());
-                    ResponseCookie expiredCookie = buildExpiredRefreshCookie();
-
-                    response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
                     break;
                 }
             }

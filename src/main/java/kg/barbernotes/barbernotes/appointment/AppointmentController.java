@@ -5,6 +5,7 @@ import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ public class AppointmentController {
     private final CreateAppointmentUseCase createAppointmentUseCase;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public PageResponse<AppointmentResponse> getAllAppointment(
             Pageable pageable,
             @RequestParam(required = false) AppointmentStatus status,
@@ -32,6 +34,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public AppointmentResponse getAppointmentById(@PathVariable UUID id){
         return bookingService.findById(id);
     }
@@ -46,6 +49,7 @@ public class AppointmentController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public AppointmentResponse updateAppointmentStatus(
             @PathVariable UUID id,
             @Valid @RequestBody AppointmentStatusUpdateRequest request

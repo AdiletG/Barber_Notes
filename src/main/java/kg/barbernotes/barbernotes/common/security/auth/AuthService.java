@@ -7,11 +7,13 @@ import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.security.auth.dto.AuthResult;
+import kg.barbernotes.barbernotes.common.security.auth.dto.ChangePasswordRequest;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtService;
 import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
 import kg.barbernotes.barbernotes.staff_account.StaffAccountEntity;
 import kg.barbernotes.barbernotes.staff_account.StaffAccountService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,19 @@ public class AuthService {
     private final RefreshTokenService  refreshTokenService;
     private final PasswordEncoder  passwordEncoder;
 
+
+    public AuthResult changePassword(UUID staffId, ChangePasswordRequest request) {
+        StaffAccountEntity staffAccount = staffAccountService.getById(staffId);
+        staffAccountService.changePassword(staffAccount.getId(), request.getOldPassword(), request.getNewPassword());
+        refreshTokenService.revokeAllForSubject(staffId);
+
+        Map<String, Object> extraClaims = buildStaffClaims(staffAccount);
+        RefreshTokenService.IssuedRefreshToken refresh = refreshTokenService.issue(staffAccount.getId(), SubjectType.STAFF);
+        String access = jwtService.generateStaffAccessToken(staffAccount.getId(),
+                staffAccount.getRole(), extraClaims);
+
+        return new AuthResult(access, refresh.rawToken());
+    }
 
     public void logout(String rawRefreshToken) {
         refreshTokenService.revokeByRawToken(rawRefreshToken);

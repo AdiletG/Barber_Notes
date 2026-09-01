@@ -7,6 +7,7 @@ import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -33,17 +34,20 @@ public class BranchController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public BranchResponse create(@Valid @RequestBody BranchCreateRequest request){
         return branchService.create(request);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public BranchResponse update(@PathVariable UUID id, @Valid @RequestBody BranchUpdateRequest request){
        return branchService.update(id, request);
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public BranchResponse inactivateBranch(@PathVariable UUID id, @Valid @RequestBody StatusUpdateRequest request) {
        return branchService.inactive(id, request);
     }

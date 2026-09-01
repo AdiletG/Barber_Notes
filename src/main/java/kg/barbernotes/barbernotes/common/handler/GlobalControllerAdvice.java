@@ -72,8 +72,8 @@ public class GlobalControllerAdvice {
             Exception ex,
             HttpServletRequest request){
 
-//        log.error("Exception: {} at path {}", ex.getMessage(), request.getRequestURI());
-        log.error("Exception at path {}", request.getRequestURI(), ex);
+        log.error("Exception: {} at path {}", ex.getMessage(), request.getRequestURI());
+
         return errorService(ErrorCode.INTERNAL_SERVER_ERROR,
                 "Внутренняя ошибка сервера. Мы уже работаем над этим.", request.getRequestURI());
     }

@@ -7,6 +7,7 @@ import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -40,17 +41,20 @@ public class BarberController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public BarberResponse create(@Valid @RequestBody BarberCreateRequest request){
         return barberService.create(request);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public BarberResponse update(@PathVariable UUID id,@Valid @RequestBody BarberUpdateRequest request){
         return barberService.update(id, request);
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public BarberResponse updateStatus(@PathVariable UUID id, @Valid @RequestBody StatusUpdateRequest request){
         return barberService.updateStatus(id, request);
     }
