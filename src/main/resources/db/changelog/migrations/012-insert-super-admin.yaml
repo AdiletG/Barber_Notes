@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 012
+      author: AdiletG
+      changes:
+        - sql:
+            sql: "
+            INSERT INTO staff_account (id, phone_number, password_hash, role, barber_id, branch_id,
+            status, must_change_password, failed_login_attempts, version, created_at, updated_at) 
+            VALUES ('00000000-0000-0000-0000-000000000001','996700700700','${SUPER_ADMIN_PASSWORD}',
+            'SUPER_ADMIN',NULL,NULL,'ACTIVE',false,0,0,now(),now());"

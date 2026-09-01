@@ -1,8 +1,6 @@
 package kg.barbernotes.barbernotes.common.security.jwt;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import kg.barbernotes.barbernotes.common.entity.BaseEntity;
 import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import lombok.Getter;
@@ -17,6 +15,7 @@ import java.util.UUID;
 @Table(name = "refresh_token")
 public class RefreshTokenEntity extends BaseEntity {
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "subject_type", nullable = false, length = 20)
     private SubjectType subjectType;
 

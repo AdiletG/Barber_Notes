@@ -9,6 +9,8 @@ spring:
 
   liquibase:
     change-log: classpath:db/changelog/master.yaml
+    parameters:
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
 
   jpa:
     open-in-view: false
