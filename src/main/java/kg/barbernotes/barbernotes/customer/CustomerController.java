@@ -22,10 +22,11 @@ public class CustomerController {
     private final AppointmentBookingService appointmentBookingService;
 
     @GetMapping("/{customerId}/appointments")
-    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public PageResponse<AppointmentResponse> getCustomerAppointments(
             @PathVariable UUID customerId, Pageable pageable) {
-        return PageResponse.of(appointmentBookingService.findAllFromCustomerId(customerId, pageable));
+        return PageResponse.of(appointmentBookingService.findALLFromFilters(
+                null, null, null, customerId, null, null, pageable));
     }
 
     @GetMapping

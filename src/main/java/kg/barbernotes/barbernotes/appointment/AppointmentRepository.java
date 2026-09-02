@@ -11,7 +11,6 @@ import java.util.UUID;
 
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, UUID> {
 
-    Page<AppointmentEntity> findAllByCustomerEntity_Id(UUID customerId, Pageable pageable);
     Page<AppointmentEntity> findAllByStatus(AppointmentStatus status, Pageable pageable);
 
     Boolean existsByBarberEntity_IdAndAppointmentDateAndStatus(

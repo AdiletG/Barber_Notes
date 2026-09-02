@@ -32,6 +32,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/barbers/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/barbers/*/shifts/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/appointments").permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
