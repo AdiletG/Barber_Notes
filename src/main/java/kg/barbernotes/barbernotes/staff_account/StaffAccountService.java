@@ -34,7 +34,7 @@ public class StaffAccountService {
     public void changePassword(UUID staffID, String oldPassword, String newPassword) {
         StaffAccountEntity account = getById(staffID);
 
-        if(passwordEncoder.matches(oldPassword, account.getPasswordHash())){
+        if(!passwordEncoder.matches(oldPassword, account.getPasswordHash())){
             throw new AuthenticationException(
                     ErrorCode.INVALID_CURRENT_PASSWORD,
                     "Текущий пароль не верный, просьба проверить и снова попробовать"
