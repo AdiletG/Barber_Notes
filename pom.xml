@@ -45,6 +45,13 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Open API -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+
         <!-- Actuator (health check, metrics) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

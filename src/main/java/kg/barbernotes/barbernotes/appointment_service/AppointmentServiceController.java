@@ -4,6 +4,7 @@ import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,7 @@ public class AppointmentServiceController {
     private final AppointmentBookingService appointmentBookingService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public List<AppointmentServiceResponse> findAllAppointments(@PathVariable UUID id) {
         if(!appointmentBookingService.existsById(id)) {
             throw new EntityNotFoundException(

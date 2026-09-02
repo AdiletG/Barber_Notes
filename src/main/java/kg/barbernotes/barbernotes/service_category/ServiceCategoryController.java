@@ -7,6 +7,7 @@ import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -32,12 +33,14 @@ public class ServiceCategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public ServiceCategoryResponse create(@Valid @RequestBody ServiceCategoryCreateRequest request){
         return serviceCategoryService.create(request);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ServiceCategoryResponse update(
             @PathVariable UUID id, @Valid @RequestBody ServiceCategoryUpdateRequest request
     ){
@@ -45,6 +48,7 @@ public class ServiceCategoryController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ServiceCategoryResponse inactive(
             @PathVariable UUID id, @Valid @RequestBody StatusUpdateRequest request){
         return serviceCategoryService.updateStatus(id, request);

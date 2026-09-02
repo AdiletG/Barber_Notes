@@ -1,0 +1,107 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010
+      author: AdiletG
+      changes:
+        - createTable:
+            tableName: staff_account
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: phone_number
+                  type: varchar(15)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: barber_id
+                  type: UUID
+              - column:
+                  name: branch_id
+                  type: UUID
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: must_change_password
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: failed_login_attempts
+                  type: integer
+                  defaultValueNumeric: "0"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: locked_until
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: last_login_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: INTEGER
+                  defaultValueNumeric: "0"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            constraintName: fk_staff_account_for_barber_id
+            baseTableName: staff_account
+            baseColumnNames: barber_id
+            referencedTableName: barber
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - addForeignKeyConstraint:
+            constraintName: fk_staff_account_for_branch_id
+            baseTableName: staff_account
+            baseColumnNames: branch_id
+            referencedTableName: branch
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - sql:
+            sql: "ALTER TABLE staff_account ADD CONSTRAINT chk_status_staff_account 
+            CHECK (status IN ('ACTIVE', 'INACTIVE'));"
+
+        - sql:
+            sql: "ALTER TABLE staff_account ADD CONSTRAINT chk_role_staff_account 
+            CHECK (role IN ('BARBER', 'BRANCH_ADMIN' , 'SUPER_ADMIN'));"
+
+        - sql:
+            sql: "ALTER TABLE staff_account ADD CONSTRAINT chk_staff_account_role_relations 
+                    CHECK (
+                      (role = 'BARBER' AND barber_id IS NOT NULL AND branch_id IS NOT NULL) OR
+                      (role = 'BRANCH_ADMIN' AND barber_id IS NULL AND branch_id IS NOT NULL) OR
+                      (role = 'SUPER_ADMIN' AND barber_id IS NULL AND branch_id IS NULL)
+                    );"

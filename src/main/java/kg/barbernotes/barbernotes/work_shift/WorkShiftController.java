@@ -2,6 +2,7 @@ package kg.barbernotes.barbernotes.work_shift;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ public class WorkShiftController {
     }
 
     @PostMapping("/api/v1/barbers/{barberId}/shifts")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public WorkShiftResponse createWorkShift(
             @PathVariable UUID barberId,
             @Valid @RequestBody WorkShiftCreateRequest request
@@ -35,6 +37,7 @@ public class WorkShiftController {
     }
 
     @PutMapping("/api/v1/shifts/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public WorkShiftResponse updateWorkShift(
             @PathVariable UUID id,
             @Valid @RequestBody WorkShiftUpdateRequest request
@@ -43,6 +46,7 @@ public class WorkShiftController {
     }
 
     @DeleteMapping("/api/v1/shifts/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public void deleteWorkShift(@PathVariable UUID id){
         workShiftService.delete(id);
     }

@@ -5,6 +5,7 @@ import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,6 +36,7 @@ public class BarberServiceController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public BarberServiceResponse create(
             @PathVariable UUID barberId,
@@ -43,6 +45,7 @@ public class BarberServiceController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public BarberServiceResponse updateStatus(
             @PathVariable UUID id,
             @PathVariable UUID barberId,
