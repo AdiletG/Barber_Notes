@@ -5,6 +5,7 @@ import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
 import kg.barbernotes.barbernotes.common.entity.AuditableEntity;
 import kg.barbernotes.barbernotes.common.enums.Source;
 import kg.barbernotes.barbernotes.common.enums.Status;
+import kg.barbernotes.barbernotes.common.security.otp.OtpEntity;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,4 +34,7 @@ public class CustomerEntity extends AuditableEntity {
 
     @OneToMany(mappedBy = "customerEntity")
     private List<AppointmentEntity> appointmentEntities;
+
+    @OneToMany(mappedBy = "customerEntity")
+    private List<OtpEntity>  otpEntities;
 }

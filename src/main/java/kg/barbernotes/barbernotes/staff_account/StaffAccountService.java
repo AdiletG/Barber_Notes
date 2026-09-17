@@ -10,6 +10,7 @@ import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.common.util.PasswordGenerator;
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountCreateRequest;
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountCreateResponse;
 import lombok.RequiredArgsConstructor;

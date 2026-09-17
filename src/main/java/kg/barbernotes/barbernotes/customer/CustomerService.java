@@ -68,6 +68,14 @@ public class CustomerService {
                 ));
     }
 
+    public CustomerEntity getById(UUID id) {
+        return customerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Пользователь с таким id не существует"
+                ));
+    }
+
     @Transactional(readOnly = true)
     public Page<CustomerResponse> findByStatus(Status status, Pageable pageable) {
         return customerRepository.findByStatus(status, pageable)

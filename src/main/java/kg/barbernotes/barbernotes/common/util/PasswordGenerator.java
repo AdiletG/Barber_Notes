@@ -1,5 +1,4 @@
-package kg.barbernotes.barbernotes.staff_account;
-import lombok.RequiredArgsConstructor;
+package kg.barbernotes.barbernotes.common.util;
 import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -38,5 +37,9 @@ public class PasswordGenerator {
         }
 
         return password.toString();
+    }
+
+    public Integer generateOtp(){
+        return random.nextInt(1_000_000);
     }
 }
