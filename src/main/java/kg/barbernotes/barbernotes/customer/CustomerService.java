@@ -59,6 +59,15 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    public CustomerEntity getByPhoneNumber(String phoneNumber){
+        return customerRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Пользователь с таким номером не найден"
+                ));
+    }
+
+    @Transactional(readOnly = true)
     public CustomerResponse findById(UUID id) {
         return customerRepository.findById(id)
                 .map(customerMapper::toResponse)

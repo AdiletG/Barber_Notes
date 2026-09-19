@@ -6,10 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.InvalidTokenException;
-import kg.barbernotes.barbernotes.common.security.auth.dto.AuthResult;
-import kg.barbernotes.barbernotes.common.security.auth.dto.ChangePasswordRequest;
-import kg.barbernotes.barbernotes.common.security.auth.dto.StaffLoginRequest;
-import kg.barbernotes.barbernotes.common.security.auth.dto.StaffLoginResponse;
+import kg.barbernotes.barbernotes.common.security.auth.dto.*;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -29,21 +26,39 @@ public class AuthController {
     private static final String REFRESH_COOKIE_NAME =  "refresh_token";
 
 
+    @PostMapping("/customer/otp/verify")
+    public AccessTokenResponse verifyCustomerOtp (
+            @Valid @RequestBody CustomerOtpVerifyRequest request,
+            HttpServletResponse response) {
+        AuthResult authResult = authService.customerOtpLogin(
+                request.getPhoneNumber(), request.getCode());
+
+        ResponseCookie responseCookie = buildCustomerRefreshCookie(authResult.getRefreshToken());
+        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+
+        return new AccessTokenResponse(authResult.getAccessToken());
+    }
+
+    @PostMapping("/customer/otp/request")
+    public void requestCustomerOtp(@Valid @RequestBody CustomerOtpRequest request){
+        authService.requestCustomerOtp(request.getPhoneNumber());
+    }
+
     @PostMapping("/change-password")
-    public StaffLoginResponse changePassword(
+    public AccessTokenResponse changePassword(
             @Valid @RequestBody ChangePasswordRequest changePasswordRequest,
             HttpServletResponse response) {
 
-        String subjectId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        UUID staffAccountId = UUID.fromString(subjectId);
+        AuthenticatedUser principal = (AuthenticatedUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UUID staffAccountId = principal.subjectId();
 
         AuthResult  authResult = authService.changePassword(staffAccountId, changePasswordRequest);
 
-        ResponseCookie responseCookie = buildRefreshCookie(authResult.getRefreshToken());
+        ResponseCookie responseCookie = buildStuffRefreshCookie(authResult.getRefreshToken());
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
-        return new StaffLoginResponse(authResult.getAccessToken());
+        return new AccessTokenResponse(authResult.getAccessToken());
     }
 
     @PostMapping("/staff-logout")
@@ -65,31 +80,31 @@ public class AuthController {
     }
 
     @PostMapping("/staff-login")
-    public StaffLoginResponse login(@Valid @RequestBody StaffLoginRequest request,
+    public AccessTokenResponse login(@Valid @RequestBody StaffLoginRequest request,
             HttpServletResponse response){
 
         AuthResult  authResult = authService.staffLogin(
                 request.getPhoneNumber(), request.getPassword()
         );
 
-        ResponseCookie responseCookie = buildRefreshCookie(authResult.getRefreshToken());
+        ResponseCookie responseCookie = buildStuffRefreshCookie(authResult.getRefreshToken());
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
-        return new StaffLoginResponse(authResult.getAccessToken());
+        return new AccessTokenResponse(authResult.getAccessToken());
     }
 
     @PostMapping("/refresh")
-    public StaffLoginResponse refresh(HttpServletRequest request, HttpServletResponse response){
+    public AccessTokenResponse refresh(HttpServletRequest request, HttpServletResponse response){
         String rawToken = extractRefreshToken(request);
 
         AuthResult  authResult = authService.refresh(rawToken);
 
-        ResponseCookie responseCookie = buildRefreshCookie(authResult.getRefreshToken());
+        ResponseCookie responseCookie = buildStuffRefreshCookie(authResult.getRefreshToken());
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
-        return new StaffLoginResponse(authResult.getAccessToken());
+        return new AccessTokenResponse(authResult.getAccessToken());
     }
 
 
@@ -119,7 +134,17 @@ public class AuthController {
                 .build();
     }
 
-    private ResponseCookie buildRefreshCookie(String rawRefreshToken) {
+    private ResponseCookie buildCustomerRefreshCookie(String rawRefreshToken) {
+        return ResponseCookie.from(REFRESH_COOKIE_NAME, rawRefreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/api/v1/auth")
+                .maxAge(Duration.ofMinutes(jwtProperties.customer().refreshTtlMinutes()))
+                .build();
+    }
+
+    private ResponseCookie buildStuffRefreshCookie(String rawRefreshToken) {
         return ResponseCookie.from(REFRESH_COOKIE_NAME, rawRefreshToken)
                 .httpOnly(true)
                 .secure(true)

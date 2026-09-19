@@ -10,9 +10,14 @@ import kg.barbernotes.barbernotes.common.security.auth.dto.AuthResult;
 import kg.barbernotes.barbernotes.common.security.auth.dto.ChangePasswordRequest;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtService;
 import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
+import kg.barbernotes.barbernotes.common.security.otp.OtpEntity;
+import kg.barbernotes.barbernotes.common.security.otp.OtpService;
+import kg.barbernotes.barbernotes.customer.CustomerEntity;
+import kg.barbernotes.barbernotes.customer.CustomerService;
 import kg.barbernotes.barbernotes.staff_account.StaffAccountEntity;
 import kg.barbernotes.barbernotes.staff_account.StaffAccountService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,12 +30,34 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
     private final StaffAccountService  staffAccountService;
+    private final CustomerService customerService;
+    private final OtpService  otpService;
     private final JwtService jwtService;
     private final RefreshTokenService  refreshTokenService;
     private final PasswordEncoder  passwordEncoder;
 
+
+    public AuthResult customerOtpLogin(String phoneNumber, String rawCode) {
+        CustomerEntity customer = customerService.getByPhoneNumber(phoneNumber);
+        otpService.verify(customer.getId(), rawCode);
+
+        Map<String, Object> extraClaims = buildCustomerClaims(customer);
+        String access = jwtService.generateCustomerAccessToken(customer.getId(), extraClaims);
+        RefreshTokenService.IssuedRefreshToken refresh =
+                refreshTokenService.issue(customer.getId(), SubjectType.CUSTOMER);
+
+        return new AuthResult(access, refresh.rawToken());
+    }
+
+    public void requestCustomerOtp(String phoneNumber){
+        CustomerEntity customer = customerService.getByPhoneNumber(phoneNumber);
+        String code = otpService.issueFor(customer.getId());
+        log.info("OTP для {}: {}", phoneNumber, code);
+        // TODO: заменить на реальную отправку через Telegram
+    }
 
     public AuthResult changePassword(UUID staffId, ChangePasswordRequest request) {
         StaffAccountEntity staffAccount = staffAccountService.getById(staffId);
@@ -72,11 +99,18 @@ public class AuthService {
         }
 
 
+            CustomerEntity customer = customerService.getById(rotated.subjectId());
 
-        throw new BusinessRuleViolationException(
-                ErrorCode.BUSINESS_RULE_VIOLATION,
-                "Обновление сессии клиента пока не реализовано"
-        );
+            if(customer.getStatus() != Status.ACTIVE){
+                throw new AuthenticationException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Клиент не найден"
+                );
+            }
+            Map<String, Object> extraClaims = buildCustomerClaims(customer);
+            String access = jwtService.generateCustomerAccessToken(customer.getId(), extraClaims);
+            return new AuthResult(access, rotated.rawRefreshToken());
+
     }
 
     public AuthResult staffLogin(String phoneNumber, String rawPassword){
@@ -115,6 +149,12 @@ public class AuthService {
         RefreshTokenService.IssuedRefreshToken refresh = refreshTokenService.issue(staffAccount.getId(), SubjectType.STAFF);
 
         return new AuthResult(access, refresh.rawToken());
+    }
+
+    private Map<String, Object> buildCustomerClaims(CustomerEntity customer){
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("customerId", customer.getId());
+        return extraClaims;
     }
 
     private Map<String, Object> buildStaffClaims(StaffAccountEntity staffAccount){
