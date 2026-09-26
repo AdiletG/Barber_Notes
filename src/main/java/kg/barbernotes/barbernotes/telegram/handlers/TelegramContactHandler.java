@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.telegram.handlers;
 
+import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.otp.OtpService;
 import kg.barbernotes.barbernotes.customer.CustomerEntity;
@@ -34,8 +35,11 @@ public class TelegramContactHandler {
             );
         }catch (EntityNotFoundException e){
             sendHandler.sendMessage(chatId,
-                    "К сожалению клиента под таким номером не существует" + e.getMessage()
+                    "К сожалению клиента под таким номером не существует"
             );
+        }catch (BusinessRuleViolationException e){
+            sendHandler.sendMessage(chatId,
+                    "Код уже был отправлен недавно, подождите несколько минут и попробуйте снова");
         }
 
     }

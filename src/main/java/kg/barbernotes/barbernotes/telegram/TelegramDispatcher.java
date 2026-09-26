@@ -28,27 +28,58 @@ public class TelegramDispatcher {
 
             if(message.hasContact()){
                contactHandler.checkCustomer(message.getContact().getPhoneNumber(),  chatId);
-                System.out.println("Зашел на проверку контакта");
+               return;
             }
 
             if(message.hasText()){
 
-                List<List<String>> register = List.of(
-                        List.of("📱 Зарегистрироваться")
-                );
+                String text = message.getText().trim();
 
-                sendHandler.sendKeyboardRequestContact(chatId, "Пожалуйста, нажмите на кнопку ниже, чтобы поделиться контактом.", register);
-            return;
+                switch (text){
+                    case "/start" -> {
+
+                        sendHandler.sendMessage(update.getMessage().getChatId(),
+                                "Добро пожаловать!!!");
+
+
+                        sendHandler.sendMessage(update.getMessage().getChatId(),
+                                "Просьба отправить контакт для проверки и дальнейшей отправки ОТП");
+
+                        List<List<String>> register = List.of(
+                                List.of("Отправить контакт")
+                        );
+
+                        sendHandler.sendKeyboardRequestContact(chatId,
+                                "Пожалуйста, нажмите на кнопку ниже, чтобы поделиться контактом.", register);
+
+                    }
+
+                    case  "/stop" -> {}
+
+                    default -> {
+                        sendHandler.sendMessage(update.getMessage().getChatId(),
+                                "Не понятная команда для бота");
+
+                        sendHandler.sendKeyboard(chatId, "Просьба выбрать команду из списка ниже", menu());
+                    }
+                }
+
+                return;
             }
 
         sendHandler.sendMessage(update.getMessage().getChatId(),
-                "Просьба отправить контакт для проверки и дальнейшей отправки ОТП");
+                "Не понятная команда для бота");
 
-        List<List<String>> register = List.of(
-                List.of("📱 Зарегистрироваться")
+        sendHandler.sendKeyboard(chatId, "Просьба выбрать команду из списка ниже", menu());
+
+
+    }
+
+    private List<List<String>> menu(){
+       return List.of(
+                List.of("/start"),
+                List.of("/stop")
         );
-
-        sendHandler.sendKeyboardRequestContact(chatId, "Пожалуйста, нажмите на кнопку ниже, чтобы поделиться контактом.", register);
 
     }
 }

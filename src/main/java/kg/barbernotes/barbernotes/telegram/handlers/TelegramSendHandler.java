@@ -73,7 +73,7 @@ public class TelegramSendHandler{
                     KeyboardRow keyboardRow = new KeyboardRow();
                     row.forEach(btn -> {
                         KeyboardButton kb = new KeyboardButton(btn);
-                        if (requestContact && "📱 Зарегистрироваться".equals(btn)) {
+                        if (requestContact && ("Отправить контакт").equals(btn)) {
                             kb.setRequestContact(true); // либо параметризовать по содержимому
                         }
                         keyboardRow.add(kb);
