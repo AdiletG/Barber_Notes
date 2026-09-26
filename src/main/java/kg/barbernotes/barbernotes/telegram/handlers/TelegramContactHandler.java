@@ -34,11 +34,10 @@ public class TelegramContactHandler {
                     code
             );
         }catch (EntityNotFoundException e){
-            sendHandler.sendMessage(chatId,
-                    "К сожалению клиента под таким номером не существует"
-            );
+            sendHandler.removeKeyboard(chatId,
+                    "К сожалению клиента под таким номером не существует");
         }catch (BusinessRuleViolationException e){
-            sendHandler.sendMessage(chatId,
+            sendHandler.removeKeyboard(chatId,
                     "Код уже был отправлен недавно, подождите несколько минут и попробуйте снова");
         }
 
