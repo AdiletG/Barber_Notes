@@ -49,7 +49,8 @@ public class AuthController {
             @Valid @RequestBody ChangePasswordRequest changePasswordRequest,
             HttpServletResponse response) {
 
-        AuthenticatedUser principal = (AuthenticatedUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        AuthenticatedUser principal =
+                (AuthenticatedUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         UUID staffAccountId = principal.subjectId();
 
         AuthResult  authResult = authService.changePassword(staffAccountId, changePasswordRequest);

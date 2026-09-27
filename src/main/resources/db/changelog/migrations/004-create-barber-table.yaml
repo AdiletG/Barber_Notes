@@ -32,6 +32,7 @@ databaseChangeLog:
                   type: varchar(15)
                   constraints:
                     nullable: false
+                    unique: true
               - column:
                   name: experience_years
                   type: integer
