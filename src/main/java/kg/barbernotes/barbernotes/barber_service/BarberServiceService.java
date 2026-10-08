@@ -97,6 +97,16 @@ public class BarberServiceService {
     }
 
     @Transactional(readOnly = true)
+    public BarberServiceEntity getServiceByBarberId(UUID barberId,  UUID serviceId) {
+        return barberServiceRepository.findByBarberEntity_IdAndServiceEntity_Id(barberId, serviceId)
+                .orElseThrow( () -> new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Барбер не оказывает выбранную услугу"
+                )
+        );
+    }
+
+    @Transactional(readOnly = true)
     public List<BarberServiceResponse> getByBarberIdServiceId(UUID barberId, UUID serviceId) {
         return barberServiceRepository.findByBarberEntity_IdAndServiceEntity_Id(barberId, serviceId)
                 .stream()

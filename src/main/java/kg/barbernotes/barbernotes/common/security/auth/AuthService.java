@@ -5,12 +5,10 @@ import kg.barbernotes.barbernotes.common.enums.StaffRole;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
-import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.security.auth.dto.AuthResult;
 import kg.barbernotes.barbernotes.common.security.auth.dto.ChangePasswordRequest;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtService;
 import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
-import kg.barbernotes.barbernotes.common.security.otp.OtpEntity;
 import kg.barbernotes.barbernotes.common.security.otp.OtpService;
 import kg.barbernotes.barbernotes.customer.CustomerEntity;
 import kg.barbernotes.barbernotes.customer.CustomerService;
@@ -18,7 +16,6 @@ import kg.barbernotes.barbernotes.staff_account.StaffAccountEntity;
 import kg.barbernotes.barbernotes.staff_account.StaffAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -49,7 +46,7 @@ public class AuthService {
         RefreshTokenService.IssuedRefreshToken refresh =
                 refreshTokenService.issue(customer.getId(), SubjectType.CUSTOMER);
 
-        return new AuthResult(access, refresh.rawToken());
+        return new AuthResult(access, refresh.rawToken(), SubjectType.CUSTOMER);
     }
 
     public void requestCustomerOtp(String phoneNumber){
@@ -62,14 +59,14 @@ public class AuthService {
     public AuthResult changePassword(UUID staffId, ChangePasswordRequest request) {
         StaffAccountEntity staffAccount = staffAccountService.getById(staffId);
         staffAccountService.changePassword(staffAccount.getId(), request.getOldPassword(), request.getNewPassword());
-        refreshTokenService.revokeAllForSubject(staffId);
+        refreshTokenService.revokeAllForSubject(staffId, SubjectType.STAFF);
 
         Map<String, Object> extraClaims = buildStaffClaims(staffAccount);
         RefreshTokenService.IssuedRefreshToken refresh = refreshTokenService.issue(staffAccount.getId(), SubjectType.STAFF);
         String access = jwtService.generateStaffAccessToken(staffAccount.getId(),
                 staffAccount.getRole(), extraClaims);
 
-        return new AuthResult(access, refresh.rawToken());
+        return new AuthResult(access, refresh.rawToken(), SubjectType.STAFF);
     }
 
     public void logout(String rawRefreshToken) {
@@ -81,6 +78,8 @@ public class AuthService {
 
         if(rotated.subjectType() == SubjectType.STAFF){
             StaffAccountEntity staffAccount = staffAccountService.getById(rotated.subjectId());
+
+            refreshTokenService.revokeAllForSubject(staffAccount.getId(), SubjectType.STAFF);
 
             if(staffAccount.getStatus() != Status.ACTIVE){
                 throw new AuthenticationException(
@@ -95,11 +94,14 @@ public class AuthService {
             String access = jwtService.generateStaffAccessToken(staffAccount.getId(),
                     staffAccount.getRole(), extraClaims);
 
-            return new AuthResult(access, rotated.rawRefreshToken());
+            return new AuthResult(access, rotated.rawRefreshToken(), SubjectType.STAFF);
         }
 
 
             CustomerEntity customer = customerService.getById(rotated.subjectId());
+
+        refreshTokenService.revokeAllForSubject(customer.getId(), SubjectType.CUSTOMER);
+
 
             if(customer.getStatus() != Status.ACTIVE){
                 throw new AuthenticationException(
@@ -109,7 +111,7 @@ public class AuthService {
             }
             Map<String, Object> extraClaims = buildCustomerClaims(customer);
             String access = jwtService.generateCustomerAccessToken(customer.getId(), extraClaims);
-            return new AuthResult(access, rotated.rawRefreshToken());
+            return new AuthResult(access, rotated.rawRefreshToken(),  SubjectType.CUSTOMER);
 
     }
 
@@ -148,7 +150,7 @@ public class AuthService {
 
         RefreshTokenService.IssuedRefreshToken refresh = refreshTokenService.issue(staffAccount.getId(), SubjectType.STAFF);
 
-        return new AuthResult(access, refresh.rawToken());
+        return new AuthResult(access, refresh.rawToken(), SubjectType.STAFF);
     }
 
     private Map<String, Object> buildCustomerClaims(CustomerEntity customer){

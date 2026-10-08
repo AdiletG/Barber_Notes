@@ -1,5 +1,8 @@
 package kg.barbernotes.barbernotes.work_shift;
 
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftCreateRequest;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

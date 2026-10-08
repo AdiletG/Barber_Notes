@@ -5,17 +5,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
+import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.exceptions.InvalidTokenException;
 import kg.barbernotes.barbernotes.common.security.auth.dto.*;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -33,7 +34,9 @@ public class AuthController {
         AuthResult authResult = authService.customerOtpLogin(
                 request.getPhoneNumber(), request.getCode());
 
-        ResponseCookie responseCookie = buildCustomerRefreshCookie(authResult.getRefreshToken());
+        ResponseCookie responseCookie =
+                buildRefreshCookie(authResult.getRefreshToken(), authResult.getSubjectType());
+
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
         return new AccessTokenResponse(authResult.getAccessToken());
@@ -44,25 +47,24 @@ public class AuthController {
         authService.requestCustomerOtp(request.getPhoneNumber());
     }
 
+    @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/change-password")
     public AccessTokenResponse changePassword(
+            @AuthenticationPrincipal AuthenticatedUser principal,
             @Valid @RequestBody ChangePasswordRequest changePasswordRequest,
             HttpServletResponse response) {
 
-        AuthenticatedUser principal =
-                (AuthenticatedUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        UUID staffAccountId = principal.subjectId();
+        AuthResult  authResult = authService.changePassword(principal.subjectId(), changePasswordRequest);
 
-        AuthResult  authResult = authService.changePassword(staffAccountId, changePasswordRequest);
-
-        ResponseCookie responseCookie = buildStuffRefreshCookie(authResult.getRefreshToken());
+        ResponseCookie responseCookie =
+                buildRefreshCookie(authResult.getRefreshToken(), authResult.getSubjectType());
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
         return new AccessTokenResponse(authResult.getAccessToken());
     }
 
-    @PostMapping("/staff-logout")
+    @PostMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         Cookie[] cookies = request.getCookies();
 
@@ -88,7 +90,8 @@ public class AuthController {
                 request.getPhoneNumber(), request.getPassword()
         );
 
-        ResponseCookie responseCookie = buildStuffRefreshCookie(authResult.getRefreshToken());
+        ResponseCookie responseCookie =
+                buildRefreshCookie(authResult.getRefreshToken(), authResult.getSubjectType());
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
@@ -101,7 +104,8 @@ public class AuthController {
 
         AuthResult  authResult = authService.refresh(rawToken);
 
-        ResponseCookie responseCookie = buildStuffRefreshCookie(authResult.getRefreshToken());
+        ResponseCookie responseCookie =
+                buildRefreshCookie(authResult.getRefreshToken(), authResult.getSubjectType());
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
@@ -135,23 +139,19 @@ public class AuthController {
                 .build();
     }
 
-    private ResponseCookie buildCustomerRefreshCookie(String rawRefreshToken) {
+    private ResponseCookie buildRefreshCookie(String rawRefreshToken, SubjectType subjectType) {
+
+        Duration ttl =  subjectType == SubjectType.CUSTOMER
+                ? Duration.ofMinutes(jwtProperties.customer().refreshTtlMinutes())
+                : Duration.ofMinutes(jwtProperties.staff().refreshTtlMinutes());
+
         return ResponseCookie.from(REFRESH_COOKIE_NAME, rawRefreshToken)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
                 .path("/api/v1/auth")
-                .maxAge(Duration.ofMinutes(jwtProperties.customer().refreshTtlMinutes()))
+                .maxAge(ttl)
                 .build();
     }
 
-    private ResponseCookie buildStuffRefreshCookie(String rawRefreshToken) {
-        return ResponseCookie.from(REFRESH_COOKIE_NAME, rawRefreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Strict")
-                .path("/api/v1/auth")
-                .maxAge(Duration.ofMinutes(jwtProperties.staff().refreshTtlMinutes()))
-                .build();
-    }
 }

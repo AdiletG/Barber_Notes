@@ -5,6 +5,8 @@ import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceMapper;
 import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceRepository;
 import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.barber.BarberService;
+import kg.barbernotes.barbernotes.barber_service.BarberServiceEntity;
+import kg.barbernotes.barbernotes.barber_service.BarberServiceService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
@@ -15,12 +17,16 @@ import kg.barbernotes.barbernotes.customer.CustomerEntity;
 import kg.barbernotes.barbernotes.customer.CustomerRepository;
 import kg.barbernotes.barbernotes.service.ServiceEntity;
 import kg.barbernotes.barbernotes.service.ServiceService;
+import kg.barbernotes.barbernotes.work_shift.WorkShiftEntity;
+import kg.barbernotes.barbernotes.work_shift.WorkShiftService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +43,8 @@ public class CreateAppointmentUseCase {
     private final AppointmentMapper appointmentMapper;
     private final AppointmentServiceMapper  appointmentServiceMapper;
     private final AppointmentServiceRepository  appointmentServiceRepository;
+    private final WorkShiftService  workShiftService;
+    private final BarberServiceService barberServiceService;
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
@@ -62,9 +70,21 @@ public class CreateAppointmentUseCase {
             customer.setStatus(Status.ACTIVE);
             customerRepository.save(customer);
         }
-
-        BarberEntity barberEntity = barberService.getById(request.getBarberId());
         BranchEntity branchEntity = branchService.getById(request.getBranchId());
+        if(branchEntity.getStatus() != Status.ACTIVE) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус филиала НЕАКТИВЕН"
+            );
+        }
+        BarberEntity barberEntity = barberService.getById(request.getBarberId());
+
+        if(barberEntity.getStatus() != Status.ACTIVE) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус барбера НЕАКТИВЕН"
+            );
+        }
 
         if(!barberEntity.getBranchEntity().getId().equals(branchEntity.getId())){
             throw new BusinessRuleViolationException(
@@ -74,7 +94,7 @@ public class CreateAppointmentUseCase {
         }
 
         List<ServiceEntity> serviceEntities = new ArrayList<>();
-        Integer totalDurationMinutes = 0;
+        int totalDurationMinutes = 15;
         BigDecimal totalPrice = BigDecimal.ZERO;
 
 
@@ -88,6 +108,23 @@ public class CreateAppointmentUseCase {
                 );
             }
 
+            BarberServiceEntity barberServiceEntity =
+                    barberServiceService.getServiceByBarberId(barberEntity.getId(), serviceId);
+
+            if(barberServiceEntity.getStatus() != Status.ACTIVE ) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Статус сервиса у барбера НЕАКТИВЕН"
+                );
+            }
+
+            if(serviceEntity.getId() == serviceId){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Услуга уже выбрана"
+                );
+            }
+
             if (serviceEntity.getDurationMinutes() != null) {
                 totalDurationMinutes += serviceEntity.getDurationMinutes();
             }
@@ -96,6 +133,40 @@ public class CreateAppointmentUseCase {
                 totalPrice = totalPrice.add(serviceEntity.getPrice());
             }
             serviceEntities.add(serviceEntity);
+        }
+
+        WorkShiftEntity workShift =
+                workShiftService.getByBarberIdWorkDate(barberEntity.getId(), request.getAppointmentDate());
+
+        if(workShift == null) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "В эту дату мастер не работает"
+            );
+        }
+
+        if (request.getStartTime().isBefore(workShift.getStartTime())) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "В это время мастер не работает"
+            );
+        }
+
+        LocalTime endTime = request.getStartTime().plusMinutes(totalDurationMinutes);
+
+        if(endTime.isAfter(workShift.getEndTime())) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "запись выходит за пределы рабочего графика"
+            );
+        }
+
+        if(request.getAppointmentDate().isBefore(LocalDate.now()) &&
+                request.getStartTime().isBefore(LocalTime.now())){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Время записи не может быть в прошлом"
+            );
         }
 
         AppointmentEntity  appointmentEntity = new AppointmentEntity();

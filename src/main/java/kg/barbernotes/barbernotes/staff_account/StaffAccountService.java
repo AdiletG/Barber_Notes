@@ -16,6 +16,7 @@ import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountCreateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -85,6 +86,7 @@ public class StaffAccountService {
         repository.save(accountEntity);
     }
 
+    @Transactional(readOnly = true)
     public StaffAccountEntity getStaffAccount(String phoneNumber){
         return repository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new AuthenticationException(

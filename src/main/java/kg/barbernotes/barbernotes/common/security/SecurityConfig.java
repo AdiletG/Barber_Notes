@@ -25,7 +25,10 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/customer/otp/verify").permitAll()
+                        .requestMatchers("/api/v1/auth/customer/otp/request").permitAll()
+                        .requestMatchers("/api/v1/auth/staff-login").permitAll()
+                        .requestMatchers("/api/v1/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/branches/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/v1/service-categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/services/**").permitAll()

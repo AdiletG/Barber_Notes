@@ -1,19 +1,28 @@
 package kg.barbernotes.barbernotes.work_shift;
 
 import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
+import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
 import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
+import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceService;
 import kg.barbernotes.barbernotes.barber.*;
+import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchResponse;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.work_shift.dto.AvailableResponse;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftCreateRequest;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +36,40 @@ public class WorkShiftService {
     private final BarberService barberService;
     private final AppointmentBookingService appointmentBookingService;
 
+    @Transactional(readOnly = true)
+    public List<AvailableResponse> availableSlot(UUID barberId, LocalDate date, int durationMinutes) {
+        WorkShiftEntity workShift = getByBarberIdWorkDate(barberId, date);
+        List<AppointmentEntity> appointments =
+                appointmentBookingService.getAppointmentByBarberIdAndDate(barberId, date);
+
+        final int STEP_MINUTES = 15;
+
+        List<AvailableResponse> slots = new ArrayList<>();
+
+        LocalTime slotStart = workShift.getStartTime();
+        LocalTime wsEndTime = workShift.getEndTime();
+
+        while (!slotStart.plusMinutes(durationMinutes).isAfter(wsEndTime)) {
+            LocalTime slotEnd = slotStart.plusMinutes(durationMinutes);
+            final LocalTime start = slotStart;
+
+            boolean busy = appointments.stream().anyMatch(a -> {
+                LocalTime aStartTime = a.getStartTime();
+                LocalTime aEndTime = aStartTime.plusMinutes(a.getTotalDurationMinutes());
+
+                return start.isBefore(aEndTime) && aStartTime.isBefore(slotEnd);
+            });
+
+            slots.add(new AvailableResponse(date, slotStart, slotEnd, !busy));
+
+            slotStart = slotStart.plusMinutes(STEP_MINUTES);
+
+        }
+
+
+        return slots;
+    }
+
     @Transactional
     public WorkShiftResponse update(UUID workShiftId, WorkShiftUpdateRequest request) {
         WorkShiftEntity workShift = workShiftRepository.findById(workShiftId)
@@ -36,7 +79,7 @@ public class WorkShiftService {
                 ));
 
         BarberEntity barber = barberService.getById(workShift.getBarberEntity().getId());
-        BranchResponse branch = branchService.findById(barber.getBranchEntity().getId());
+        BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
         if(request.getWorkDate().isBefore(LocalDate.now())) {
             throw new BusinessRuleViolationException(
@@ -109,6 +152,15 @@ public class WorkShiftService {
         }
 
         workShiftRepository.delete(workShift);
+    }
+
+    @Transactional(readOnly = true)
+    public WorkShiftEntity getByBarberIdWorkDate(UUID barberId, LocalDate date) {
+        return workShiftRepository.findByBarberEntity_IdAndWorkDate(barberId, date)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.WORK_SHIFT_NOT_FOUND,
+                        "График барбер на этот день отсутствует"
+                ));
     }
 
 

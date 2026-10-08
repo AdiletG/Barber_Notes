@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.work_shift;
+package kg.barbernotes.barbernotes.work_shift.dto;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;

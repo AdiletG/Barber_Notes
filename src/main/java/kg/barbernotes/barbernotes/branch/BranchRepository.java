@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface BranchRepository extends JpaRepository<BranchEntity, UUID> {
-
     Page<BranchEntity> findAllByStatus(Status status, Pageable pageable);
     Optional<BranchEntity> findByAddress(String address);
 }

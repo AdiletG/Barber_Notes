@@ -1,6 +1,9 @@
 package kg.barbernotes.barbernotes.work_shift;
 
 import jakarta.validation.Valid;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftCreateRequest;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

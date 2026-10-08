@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -47,6 +48,12 @@ public class AppointmentBookingService {
     @Transactional(readOnly = true)
     public Boolean existsById(UUID id) {
         return appointmentRepository.existsById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentEntity> getAppointmentByBarberIdAndDate(UUID barberId, LocalDate date) {
+        return appointmentRepository
+                .findAppointmentEntitiesByBarberEntity_IdAndAppointmentDate(barberId, date);
     }
 
     @Transactional(readOnly = true)
