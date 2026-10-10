@@ -8,6 +8,8 @@ import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
+import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -26,14 +28,19 @@ public class BarberService {
     private final BarberMapper barberMapper;
     private final BranchService branchService;
     private final ApplicationEventPublisher eventPublisher;
+    private final CurrentUserProvider currentUserProvider;
+
 
     @Transactional
     public BarberResponse update(UUID id, BarberUpdateRequest request) {
+
         BarberEntity barber = barberRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.BARBER_NOT_FOUND,
                         "Барбер с таким id отсутствует"
                 ));
+
+        checkCurrentUser(barber);
 
         if(request.getBranchId() != null && !branchService.existsById(request.getBranchId())){
             throw new EntityNotFoundException(
@@ -81,11 +88,14 @@ public class BarberService {
 
     @Transactional
     public BarberResponse updateStatus(UUID id, StatusUpdateRequest request) {
+
         BarberEntity barber = barberRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.BARBER_NOT_FOUND,
                         "Барбер с таким id отсутствует"
                 ));
+
+        checkCurrentUser(barber);
 
         if(barber.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
             barber.setStatus(Status.INACTIVE);
@@ -110,6 +120,11 @@ public class BarberService {
         return barberMapper.toResponse(barber);
     }
 
+
+    @Transactional(readOnly = true)
+    public boolean existsById(UUID id) {
+        return barberRepository.existsById(id);
+    }
 
     @Transactional(readOnly = true)
     public BarberEntity getById(UUID id) {
@@ -160,5 +175,18 @@ public class BarberService {
     public Page<BarberResponse> findAll(Pageable pageable) {
         return barberRepository.findAll(pageable)
                 .map(barberMapper::toResponse);
+    }
+
+    private void checkCurrentUser(BarberEntity barber) {
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        if("BRANCH_ADMIN".equals(currentUser.role()) &&
+                !barber.getBranchEntity().getId().equals(currentUser.subjectId())
+        ) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Данные барбере могут изменять только Администраторы филиала к которому привязан барбер"
+            );
+        }
     }
 }

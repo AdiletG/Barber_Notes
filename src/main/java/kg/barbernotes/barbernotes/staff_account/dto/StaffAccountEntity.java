@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.staff_account;
+package kg.barbernotes.barbernotes.staff_account.dto;
 
 import jakarta.persistence.*;
 import kg.barbernotes.barbernotes.barber.BarberEntity;

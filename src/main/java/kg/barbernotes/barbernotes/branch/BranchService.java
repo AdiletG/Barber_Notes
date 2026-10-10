@@ -6,6 +6,8 @@ import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
+import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -22,11 +24,20 @@ public class BranchService {
     private final BranchRepository branchRepository;
     private final BranchMapper branchMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final CurrentUserProvider currentUserProvider;
+
 
     @Transactional
     public BranchResponse update(UUID id, BranchUpdateRequest request){
-        BranchEntity branch = branchRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.BRANCH_NOT_FOUND));
+        BranchEntity branch = getById(id);
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        if(!currentUser.subjectId().equals(branch.getId())){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Администратор филиала может изменять данные только своего филиала"
+            );
+        }
 
         branchMapper.updateEntityFromDto(request, branch);
 
@@ -58,7 +69,6 @@ public class BranchService {
     }
 
     @Transactional
-
     public BranchResponse inactive(UUID id, StatusUpdateRequest request) {
         BranchEntity branch = branchRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -124,16 +134,16 @@ public class BranchService {
         return branchMapper.toResponse(branch);
     }
 
-    @Transactional(readOnly = true)
-    public BranchResponse getByAddress(String address) {
-        BranchEntity branch = branchRepository.findByAddress(address)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.BRANCH_NOT_FOUND,
-                        "Филиал с таким " + address + " отсутствуют"
-                ));
-
-        return branchMapper.toResponse(branch);
-    }
+//    @Transactional(readOnly = true)
+//    public BranchResponse getByAddress(String address) {
+//        BranchEntity branch = branchRepository.findByAddress(address)
+//                .orElseThrow(() -> new EntityNotFoundException(
+//                        ErrorCode.BRANCH_NOT_FOUND,
+//                        "Филиал с таким " + address + " отсутствуют"
+//                ));
+//
+//        return branchMapper.toResponse(branch);
+//    }
 
     @Transactional(readOnly = true)
     public Page<BranchResponse> getAllBranches(Pageable pageable) {

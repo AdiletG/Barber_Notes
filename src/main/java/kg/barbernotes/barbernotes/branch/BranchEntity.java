@@ -5,7 +5,7 @@ import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
 import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.common.entity.AuditableEntity;
 import kg.barbernotes.barbernotes.common.enums.Status;
-import kg.barbernotes.barbernotes.staff_account.StaffAccountEntity;
+import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountEntity;
 import lombok.Getter;
 import lombok.Setter;
 

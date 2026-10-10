@@ -1,6 +1,7 @@
 package kg.barbernotes.barbernotes.staff_account;
 
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountCreateRequest;
+import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountEntity;
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;

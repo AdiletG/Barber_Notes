@@ -8,10 +8,10 @@ public enum StaffRole {
     BRANCH_ADMIN("АДМИНИСТРАТОР ФИЛИАЛА"),
     SUPER_ADMIN("НАЧАЛЬНИК");
 
-    private final String stuffRole;
+    private final String staffRole;
 
-    StaffRole(String stuffRole) {
-        this.stuffRole = stuffRole;
+    StaffRole(String staffRole) {
+        this.staffRole = staffRole;
     }
 }
 

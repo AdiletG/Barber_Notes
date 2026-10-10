@@ -1,8 +1,7 @@
 package kg.barbernotes.barbernotes.work_shift;
 
-import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftCreateRequest;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftRequest;
 import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
-import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -14,10 +13,10 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 )
 public interface WorkShiftMapper {
 
-    WorkShiftEntity toEntity(WorkShiftCreateRequest request);
+    WorkShiftEntity toEntity(WorkShiftRequest request);
 
     @Mapping(target = "barberId", source = "barberEntity.id")
     WorkShiftResponse toResponse(WorkShiftEntity entity);
 
-    void updateEntity(WorkShiftUpdateRequest request, @MappingTarget WorkShiftEntity entity);
+    void updateEntity(WorkShiftRequest request, @MappingTarget WorkShiftEntity entity);
 }

@@ -1,9 +1,8 @@
 package kg.barbernotes.barbernotes.work_shift;
 
 import jakarta.validation.Valid;
-import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftCreateRequest;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftRequest;
 import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
-import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +33,7 @@ public class WorkShiftController {
     @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public WorkShiftResponse createWorkShift(
             @PathVariable UUID barberId,
-            @Valid @RequestBody WorkShiftCreateRequest request
+            @Valid @RequestBody WorkShiftRequest request
     ){
         return workShiftService.create(barberId, request);
     }
@@ -43,7 +42,7 @@ public class WorkShiftController {
     @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public WorkShiftResponse updateWorkShift(
             @PathVariable UUID id,
-            @Valid @RequestBody WorkShiftUpdateRequest request
+            @Valid @RequestBody WorkShiftRequest request
     ){
         return workShiftService.update(id, request);
     }

@@ -47,7 +47,7 @@ public class BranchController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public BranchResponse inactivateBranch(@PathVariable UUID id, @Valid @RequestBody StatusUpdateRequest request) {
        return branchService.inactive(id, request);
     }

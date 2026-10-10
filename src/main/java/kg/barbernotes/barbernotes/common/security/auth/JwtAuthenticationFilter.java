@@ -6,9 +6,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
+import kg.barbernotes.barbernotes.common.enums.TokenType;
+import kg.barbernotes.barbernotes.common.enums.UserRole;
 import kg.barbernotes.barbernotes.common.exceptions.InvalidTokenException;
+import kg.barbernotes.barbernotes.common.security.jwt.JwtClaimNames;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -68,12 +70,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try{
             Claims claims = jwtService.extractAllClaims(jwt);
 
-            if(!"access".equals(claims.get("token_type", String.class))) {
+            if(!TokenType.ACCESS.name().equals(claims.get(JwtClaimNames.TOKEN_TYPE, String.class))) {
                 throw new InvalidTokenException(ErrorCode.INVALID_TOKEN, "Токен недействителен");
             }
 
             AuthenticatedUser user = buildUser(claims);
-                List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.role()));
+                List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.role().name()));
 
 
                 SecurityContextHolder.getContext().setAuthentication(
@@ -93,7 +95,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private AuthenticatedUser buildUser (Claims claims){
         try{
-            String role = claims.get("role", String.class);
+            String role = claims.get(JwtClaimNames.ROLE,  String.class);
             if(role == null){
                 throw new InvalidTokenException(ErrorCode.INVALID_TOKEN, "Токен недействителен");
             }
@@ -102,7 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UUID barberId = parseUuid(claims.get("barberId", String.class));
             UUID branchId = parseUuid(claims.get("branchId", String.class));
 
-            return new  AuthenticatedUser(subjectID, role, barberId, branchId);
+            return new  AuthenticatedUser(subjectID, UserRole.valueOf(role), barberId, branchId);
 
         }catch (IllegalArgumentException e){
             throw new InvalidTokenException(ErrorCode.INVALID_TOKEN, "Токен недействителен");
