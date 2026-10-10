@@ -1,14 +1,18 @@
 package kg.barbernotes.barbernotes.telegram.handlers;
 
+import kg.barbernotes.barbernotes.common.enums.ErrorCode;
+import kg.barbernotes.barbernotes.common.enums.Status;
+import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.otp.OtpService;
 import kg.barbernotes.barbernotes.customer.CustomerEntity;
 import kg.barbernotes.barbernotes.customer.CustomerService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TelegramContactHandler {
@@ -21,6 +25,13 @@ public class TelegramContactHandler {
         try {
             CustomerEntity customerEntity = customerService.getByPhoneNumber(phoneNumber);
 
+            if(customerEntity.getStatus() != Status.ACTIVE) {
+                throw new AuthenticationException(
+                        ErrorCode.CUSTOMER_STATUS_IS_INACTIVE,
+                        "Customer not found"
+                );
+            }
+
             sendHandler.sendMessage(chatId,
                     "Добро пожаловать " + customerEntity.getFirstName()
             );
@@ -29,6 +40,7 @@ public class TelegramContactHandler {
             );
 
             String code = otpService.issueFor(customerEntity.getId());
+            log.info("OTP для {}: {}", phoneNumber, code);
 
             sendHandler.sendMessage(chatId,
                     code

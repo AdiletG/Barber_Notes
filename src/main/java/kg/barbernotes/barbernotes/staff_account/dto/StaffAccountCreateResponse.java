@@ -1,10 +1,7 @@
 package kg.barbernotes.barbernotes.staff_account.dto;
 
 import kg.barbernotes.barbernotes.common.enums.StaffRole;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
@@ -15,6 +12,8 @@ import java.util.UUID;
 public class StaffAccountCreateResponse {
     private UUID id;
     private String phoneNumber;
+
+    @ToString.Exclude
     private String temporaryPassword;
     private StaffRole role;
 }

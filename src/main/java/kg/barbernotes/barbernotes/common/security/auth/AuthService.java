@@ -7,13 +7,14 @@ import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
 import kg.barbernotes.barbernotes.common.security.auth.dto.AuthResult;
 import kg.barbernotes.barbernotes.common.security.auth.dto.ChangePasswordRequest;
+import kg.barbernotes.barbernotes.common.security.jwt.JwtClaimNames;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtService;
 import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
 import kg.barbernotes.barbernotes.common.security.otp.OtpService;
 import kg.barbernotes.barbernotes.customer.CustomerEntity;
 import kg.barbernotes.barbernotes.customer.CustomerService;
 import kg.barbernotes.barbernotes.staff_account.StaffAccountService;
-import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountEntity;
+import kg.barbernotes.barbernotes.staff_account.StaffAccountEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,6 +40,14 @@ public class AuthService {
 
     public AuthResult customerOtpLogin(String phoneNumber, String rawCode) {
         CustomerEntity customer = customerService.getByPhoneNumber(phoneNumber);
+
+        if(customer.getStatus() != Status.ACTIVE) {
+            throw new AuthenticationException(
+                    ErrorCode.CUSTOMER_NOT_FOUND,
+                    "Пользователь не найден"
+            );
+        }
+
         otpService.verify(customer.getId(), rawCode);
 
         Map<String, Object> extraClaims = buildCustomerClaims(customer);
@@ -51,6 +60,13 @@ public class AuthService {
 
     public void requestCustomerOtp(String phoneNumber){
         CustomerEntity customer = customerService.getByPhoneNumber(phoneNumber);
+
+        if(customer.getStatus() != Status.ACTIVE) {
+            throw new AuthenticationException(
+                    ErrorCode.CUSTOMER_NOT_FOUND,
+                    "Пользователь не найден"
+            );
+        }
         String code = otpService.issueFor(customer.getId());
         log.info("OTP для {}: {}", phoneNumber, code);
         // TODO: заменить на реальную отправку через Telegram
@@ -152,7 +168,7 @@ public class AuthService {
 
     private Map<String, Object> buildCustomerClaims(CustomerEntity customer){
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("customerId", customer.getId());
+        extraClaims.put(JwtClaimNames.CUSTOMER_ID, customer.getId());
         return extraClaims;
     }
 
@@ -160,14 +176,14 @@ public class AuthService {
         Map<String, Object> extraClaims = new HashMap<>();
 
         if(stuffAccount.getRole() == StaffRole.BARBER){
-            extraClaims.put("staffAccountId",  stuffAccount.getId());
-            extraClaims.put("barberId", stuffAccount.getBarberEntity().getId());
-            extraClaims.put("branchId", stuffAccount.getBranchEntity().getId());
+            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  stuffAccount.getId());
+            extraClaims.put(JwtClaimNames.BARBER_ID, stuffAccount.getBarberEntity().getId());
+            extraClaims.put(JwtClaimNames.BRANCH_ID, stuffAccount.getBranchEntity().getId());
         } else if (stuffAccount.getRole() == StaffRole.BRANCH_ADMIN) {
-            extraClaims.put("staffAccountId",  stuffAccount.getId());
-            extraClaims.put("branchId", stuffAccount.getBranchEntity().getId());
+            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  stuffAccount.getId());
+            extraClaims.put(JwtClaimNames.BRANCH_ID, stuffAccount.getBranchEntity().getId());
         }else {
-            extraClaims.put("staffAccountId",  stuffAccount.getId());
+            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  stuffAccount.getId());
         }
 
         return extraClaims;

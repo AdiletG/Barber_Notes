@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.staff_account.dto;
+package kg.barbernotes.barbernotes.staff_account;
 
 import jakarta.persistence.*;
 import kg.barbernotes.barbernotes.barber.BarberEntity;
@@ -47,8 +47,8 @@ public class StaffAccountEntity extends AuditableEntity {
     private Integer failedLoginAttempts;
 
     @Column(name = "locked_until")
-    OffsetDateTime  lockedUntil;
+    private OffsetDateTime  lockedUntil;
 
     @Column(name = "last_login_at")
-    OffsetDateTime lastLoginAt;
+    private OffsetDateTime lastLoginAt;
 }

@@ -18,7 +18,6 @@ import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
 import kg.barbernotes.barbernotes.common.util.PasswordGenerator;
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountCreateRequest;
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountCreateResponse;
-import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountEntity;
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,20 +46,22 @@ public class StaffAccountService {
         StaffAccountEntity stuff = getById(id);
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if("BRANCH_ADMIN".equals(currentUser.role()) && !stuff.getRole().equals(StaffRole.BARBER)) {
+        if(stuff.getId().equals(currentUser.subjectId())){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Нельзя менять статус собственного аккаунта"
+            );
+        }
+
+        if(currentUser.isBranchAdmin() && !stuff.getRole().equals(StaffRole.BARBER)) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Редактировать статус аккаунта Админа может только супер Админ"
             );
         }
-        if(stuff.getId().equals(currentUser.subjectId())){
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "нельзя менять статус собственного аккаунта"
-            );
-        }
-        if("BRANCH_ADMIN".equals(currentUser.role()) &&
-                !stuff.getBranchEntity().getId().equals(currentUser.branchId())){
+
+        if(currentUser.isBranchAdmin() &&
+                !currentUser.belongsToBranch(stuff.getBranchEntity().getId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Редактировать статус аккаунта барбера могут только Админы филиала к которому барбер привязан"
@@ -84,48 +85,13 @@ public class StaffAccountService {
         return mapper.toResponse(stuff);
     }
 
-    @Transactional
-    public void changePassword(UUID staffID, String oldPassword, String newPassword) {
-        StaffAccountEntity account = getById(staffID);
-
-        if(!passwordEncoder.matches(oldPassword, account.getPasswordHash())){
-            throw new AuthenticationException(
-                    ErrorCode.INVALID_CURRENT_PASSWORD,
-                    "Текущий пароль неверный, просьба проверить и снова попробовать"
-                    );
-        }
-
-        account.setPasswordHash(passwordEncoder.encode(newPassword));
-        account.setMustChangePassword(false);
-        repository.save(account);
-    }
-
-    public StaffAccountEntity getById(UUID staffAccountId) {
-        return repository.findById(staffAccountId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.STAFF_NOT_FOUND,
-                        "Сотрудник не найден"
-                ));
-    }
-
-
 
     @Transactional
     public StaffAccountCreateResponse create(StaffAccountCreateRequest request) {
+
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
-        BarberEntity barberEntity = barberService.getById(request.getBarberId());
-        BranchEntity branchEntity = branchService.getById(request.getBranchId());
 
-        if(request.getRole().equals(StaffRole.BARBER) && repository.existsByBarberEntity_Id(barberEntity.getId())) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Данный сотрудник уже существует"
-            );
-        }
-
-        boolean equals = currentUser.isBranchAdmin();
-
-        if(equals &&
+        if(currentUser.isBranchAdmin() &&
                 (request.getRole().equals(StaffRole.BRANCH_ADMIN) || request.getRole().equals(StaffRole.SUPER_ADMIN)))
         {
             throw new BusinessRuleViolationException(
@@ -141,12 +107,22 @@ public class StaffAccountService {
             );
         }
 
+
         StaffAccountEntity staffAccountEntity = mapper.toEntity(request);
 
         if(request.getRole() == StaffRole.BARBER) {
 
-            if(equals &&
-                    !barberEntity.getBranchEntity().getId().equals(currentUser.branchId())
+            if(request.getBarberId() == null) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.REQUEST_IS_INVALID,
+                        "роли BARBER нужен barberId"
+                );
+            }
+
+            BarberEntity barberEntity = barberService.getById(request.getBarberId());
+
+            if(currentUser.isBranchAdmin() &&
+                    !currentUser.belongsToBranch(barberEntity.getBranchEntity().getId())
             ) {
                     throw new BusinessRuleViolationException(
                             ErrorCode.BUSINESS_RULE_VIOLATION,
@@ -154,10 +130,49 @@ public class StaffAccountService {
                     );
             }
 
+            if(barberEntity.getStatus() != Status.ACTIVE) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Нельзя создать аккаунт для неактивного барбера"
+                );
+            }
+
+            if(barberEntity.getBranchEntity().getStatus() != Status.ACTIVE) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Нельзя создать аккаунт барберу с неактивным филиалом"
+                );
+            }
+
+            if(repository.existsByBarberEntity_Id(barberEntity.getId())) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BARBER_EXISTING_STAFF_ACCOUNT,
+                        "Данный сотрудник уже существует"
+                );
+            }
+
+
             staffAccountEntity.setBarberEntity(barberEntity);
             staffAccountEntity.setBranchEntity(barberEntity.getBranchEntity());
             staffAccountEntity.setRole(request.getRole());
         } else if (request.getRole() == StaffRole.BRANCH_ADMIN) {
+
+            if(request.getBranchId() == null) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.REQUEST_IS_INVALID,
+                        "Роли BRANCH_ADMIN нужен branchId"
+                );
+            }
+
+            BranchEntity branchEntity = branchService.getById(request.getBranchId());
+
+            if(branchEntity.getStatus() != Status.ACTIVE) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Нельзя создать администратора для неактивного филиала"
+                );
+            }
+
             staffAccountEntity.setBranchEntity(branchEntity);
             staffAccountEntity.setRole(request.getRole());
         }else {
@@ -179,6 +194,31 @@ public class StaffAccountService {
         stuffAccountResponse.setRole(request.getRole());
 
         return stuffAccountResponse;
+    }
+
+    @Transactional
+    public void changePassword(UUID staffID, String oldPassword, String newPassword) {
+        StaffAccountEntity account = getById(staffID);
+
+        if(!passwordEncoder.matches(oldPassword, account.getPasswordHash())){
+            throw new AuthenticationException(
+                    ErrorCode.INVALID_CURRENT_PASSWORD,
+                    "Текущий пароль неверный, просьба проверить и снова попробовать"
+            );
+        }
+
+        account.setPasswordHash(passwordEncoder.encode(newPassword));
+        account.setMustChangePassword(false);
+        repository.save(account);
+    }
+
+    @Transactional(readOnly = true)
+    public StaffAccountEntity getById(UUID staffAccountId) {
+        return repository.findById(staffAccountId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.STAFF_NOT_FOUND,
+                        "Сотрудник не найден"
+                ));
     }
 
     @Transactional

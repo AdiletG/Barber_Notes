@@ -8,11 +8,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 
@@ -46,7 +49,7 @@ public class GlobalControllerAdvice {
                 .toList();
 
         ErrorResponse response = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
                 .status(ErrorCode.VALIDATION_FAILED.getHttpStatus().value())
                 .error(ErrorCode.VALIDATION_FAILED.getCode())
                 .message("Ошибка валидации входящих данных")
@@ -64,7 +67,26 @@ public class GlobalControllerAdvice {
 
         log.warn("OptimisticLockingFailureException exception: {} at path {}", ex.getMessage(), request.getRequestURI());
 
-        return errorService(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, ex.getMessage(), request.getRequestURI()) ;
+        return errorService(
+                ErrorCode.OPTIMISTIC_LOCK_CONFLICT,
+                "Данные были изменены другим пользователем, обновите страницу",
+                request.getRequestURI()) ;
+    }
+
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        log.warn("Access denied at path {}: {}",
+                request.getRequestURI(), ex.getMessage());
+
+        return errorService(
+                ErrorCode.FORBIDDEN,
+                "Недостаточно прав для выполнения операции",
+                request.getRequestURI()
+        );
     }
 
     @ExceptionHandler(Exception.class)
@@ -81,7 +103,7 @@ public class GlobalControllerAdvice {
 
     private  ResponseEntity<ErrorResponse> errorService(ErrorCode errorCode, String message, String path) {
         ErrorResponse response = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
                 .status(errorCode.getHttpStatus().value())
                 .error(errorCode.getCode())
                 .message(message != null ? message : errorCode.name())

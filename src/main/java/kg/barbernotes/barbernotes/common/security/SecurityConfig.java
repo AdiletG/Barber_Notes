@@ -29,11 +29,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/customer/otp/request").permitAll()
                         .requestMatchers("/api/v1/auth/staff-login").permitAll()
                         .requestMatchers("/api/v1/auth/refresh").permitAll()
+                        .requestMatchers("/api/v1/auth/logout").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/branches/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/v1/service-categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/services/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/barbers/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/barbers/*/shifts/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/appointments").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",

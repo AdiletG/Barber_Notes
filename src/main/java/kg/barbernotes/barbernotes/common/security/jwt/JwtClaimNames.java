@@ -6,6 +6,11 @@ public final class JwtClaimNames {
     public static final String ROLE = "role";
     public static final String TOKEN_TYPE = "tokenType";
 
-    private JwtClaimNames() {
-    }
+    public static final String BARBER_ID = "barberId";
+    public static final String BRANCH_ID = "branchId";
+    public static final String STAFF_ACCOUNT_ID = "staffAccountId";
+    public static final String CUSTOMER_ID = "customerId";
+
+
+    private JwtClaimNames() {}
 }

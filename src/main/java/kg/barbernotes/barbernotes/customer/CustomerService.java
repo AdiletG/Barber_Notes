@@ -3,8 +3,10 @@ package kg.barbernotes.barbernotes.customer;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
+import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,14 +20,11 @@ import java.util.UUID;
 public class CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
+    private final RefreshTokenService  refreshTokenService;
 
     @Transactional
     public CustomerResponse update(UUID id, CustomerUpdateRequest request){
-        CustomerEntity customer = customerRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.CUSTOMER_NOT_FOUND,
-                        "Пользователь с таким id не существует"
-                ));
+        CustomerEntity customer = getById(id);
         customerMapper.updateCustomer(request, customer);
         customer = customerRepository.save(customer);
         return customerMapper.toResponse(customer);
@@ -40,19 +39,15 @@ public class CustomerService {
                 ));
         if (customer.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
             customer.setStatus(Status.INACTIVE);
+            refreshTokenService.revokeAllForSubject(customer.getId(), SubjectType.CUSTOMER);
             customerRepository.save(customer);
         } else if (customer.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
             customer.setStatus(Status.ACTIVE);
             customerRepository.save(customer);
-        } else if (customer.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Статус пользователя уже НЕАКТИВЕН"
-            );
         } else {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Статус пользователя уже АКТИВЕН"
+                    "Пользователь уже имеет запрошенный статус"
             );
         }
         return customerMapper.toResponse(customer);
@@ -77,6 +72,7 @@ public class CustomerService {
                 ));
     }
 
+    @Transactional(readOnly = true)
     public CustomerEntity getById(UUID id) {
         return customerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(

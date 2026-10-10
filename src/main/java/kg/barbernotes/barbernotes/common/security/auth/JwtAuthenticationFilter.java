@@ -101,12 +101,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             UUID subjectID = UUID.fromString(claims.getSubject());
-            UUID barberId = parseUuid(claims.get("barberId", String.class));
-            UUID branchId = parseUuid(claims.get("branchId", String.class));
+            UUID barberId = parseUuid(claims.get(JwtClaimNames.BARBER_ID, String.class));
+            UUID branchId = parseUuid(claims.get(JwtClaimNames.BRANCH_ID, String.class));
 
             return new  AuthenticatedUser(subjectID, UserRole.valueOf(role), barberId, branchId);
 
-        }catch (IllegalArgumentException e){
+        }catch (IllegalArgumentException | NullPointerException e){
             throw new InvalidTokenException(ErrorCode.INVALID_TOKEN, "Токен недействителен");
         }
     }
