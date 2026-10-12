@@ -29,7 +29,7 @@ public class StaffAccountEntity extends AuditableEntity {
     private StaffRole role;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "barber_id")
+    @JoinColumn(name = "barber_id", unique = true)
     private BarberEntity barberEntity;
 
     @ManyToOne(fetch = FetchType.LAZY)
