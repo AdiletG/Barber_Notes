@@ -42,11 +42,6 @@ public class AuthController {
         return new AccessTokenResponse(authResult.getAccessToken(), Boolean.FALSE);
     }
 
-    @PostMapping("/customer/otp/request")
-    public void requestCustomerOtp(@Valid @RequestBody CustomerOtpRequest request){
-        authService.requestCustomerOtp(request.getPhoneNumber());
-    }
-
     @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/change-password")
     public AccessTokenResponse changePassword(

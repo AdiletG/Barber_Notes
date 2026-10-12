@@ -58,18 +58,17 @@ public class AuthService {
         return new AuthResult(access, refresh.rawToken(), SubjectType.CUSTOMER, Boolean.FALSE);
     }
 
-    public void requestCustomerOtp(String phoneNumber){
-        CustomerEntity customer = customerService.getByPhoneNumber(phoneNumber);
+    public String requestCustomerOtp(String phoneNumber){
+            CustomerEntity customerEntity = customerService.getByPhoneNumber(phoneNumber);
 
-        if(customer.getStatus() != Status.ACTIVE) {
-            throw new CustomAuthenticationException(
-                    ErrorCode.CUSTOMER_NOT_FOUND,
-                    "Пользователь не найден"
-            );
-        }
-        String code = otpService.issueFor(customer.getId());
-        log.info("OTP для {}: {}", phoneNumber, code);
-        // TODO: заменить на реальную отправку через Telegram
+            if(customerEntity.getStatus() != Status.ACTIVE) {
+                throw new CustomAuthenticationException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Пользователь не найден"
+                );
+            }
+
+        return otpService.issueFor(customerEntity.getId());
     }
 
     public AuthResult changePassword(UUID staffId, ChangePasswordRequest request) {
