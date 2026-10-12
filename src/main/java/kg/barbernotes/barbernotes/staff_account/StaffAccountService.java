@@ -9,7 +9,7 @@ import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.StaffRole;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.enums.SubjectType;
-import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
+import kg.barbernotes.barbernotes.common.exceptions.CustomAuthenticationException;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
@@ -43,17 +43,17 @@ public class StaffAccountService {
 
     @Transactional
     public StaffAccountResponse statusUpdate(UUID id, StatusUpdateRequest request){
-        StaffAccountEntity stuff = getById(id);
+        StaffAccountEntity staffAccount = getById(id);
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if(stuff.getId().equals(currentUser.subjectId())){
+        if(staffAccount.getId().equals(currentUser.subjectId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Нельзя менять статус собственного аккаунта"
             );
         }
 
-        if(currentUser.isBranchAdmin() && !stuff.getRole().equals(StaffRole.BARBER)) {
+        if(currentUser.isBranchAdmin() && !staffAccount.getRole().equals(StaffRole.BARBER)) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Редактировать статус аккаунта Админа может только супер Админ"
@@ -61,20 +61,20 @@ public class StaffAccountService {
         }
 
         if(currentUser.isBranchAdmin() &&
-                !currentUser.belongsToBranch(stuff.getBranchEntity().getId())){
+                !currentUser.belongsToBranch(staffAccount.getBranchEntity().getId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Редактировать статус аккаунта барбера могут только Админы филиала к которому барбер привязан"
             );
         }
 
-        if(stuff.getStatus().equals(Status.ACTIVE) && request.getStatus().equals(Status.INACTIVE)){
-            stuff.setStatus(request.getStatus());
-            refreshTokenService.revokeAllForSubject(stuff.getId(), SubjectType.STAFF);
-            repository.save(stuff);
-        } else if (stuff.getStatus().equals(Status.INACTIVE) && request.getStatus().equals(Status.ACTIVE)) {
-            stuff.setStatus(request.getStatus());
-            repository.save(stuff);
+        if(staffAccount.getStatus().equals(Status.ACTIVE) && request.getStatus().equals(Status.INACTIVE)){
+            staffAccount.setStatus(request.getStatus());
+            refreshTokenService.revokeAllForSubject(staffAccount.getId(), SubjectType.STAFF);
+            repository.save(staffAccount);
+        } else if (staffAccount.getStatus().equals(Status.INACTIVE) && request.getStatus().equals(Status.ACTIVE)) {
+            staffAccount.setStatus(request.getStatus());
+            repository.save(staffAccount);
         }else {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
@@ -82,7 +82,7 @@ public class StaffAccountService {
             );
         }
 
-        return mapper.toResponse(stuff);
+        return mapper.toResponse(staffAccount);
     }
 
 
@@ -108,14 +108,14 @@ public class StaffAccountService {
         }
 
 
-        StaffAccountEntity staffAccountEntity = mapper.toEntity(request);
+        StaffAccountEntity staffAccount = mapper.toEntity(request);
 
         if(request.getRole() == StaffRole.BARBER) {
 
             if(request.getBarberId() == null) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.REQUEST_IS_INVALID,
-                        "роли BARBER нужен barberId"
+                        "Роли BARBER нужен barberId"
                 );
             }
 
@@ -152,9 +152,9 @@ public class StaffAccountService {
             }
 
 
-            staffAccountEntity.setBarberEntity(barberEntity);
-            staffAccountEntity.setBranchEntity(barberEntity.getBranchEntity());
-            staffAccountEntity.setRole(request.getRole());
+            staffAccount.setBarberEntity(barberEntity);
+            staffAccount.setBranchEntity(barberEntity.getBranchEntity());
+            staffAccount.setRole(request.getRole());
         } else if (request.getRole() == StaffRole.BRANCH_ADMIN) {
 
             if(request.getBranchId() == null) {
@@ -173,27 +173,27 @@ public class StaffAccountService {
                 );
             }
 
-            staffAccountEntity.setBranchEntity(branchEntity);
-            staffAccountEntity.setRole(request.getRole());
+            staffAccount.setBranchEntity(branchEntity);
+            staffAccount.setRole(request.getRole());
         }else {
-            staffAccountEntity.setRole(request.getRole());
+            staffAccount.setRole(request.getRole());
         }
 
         String temporaryPassword = passwordGenerator.generatePassword();
-        staffAccountEntity.setPasswordHash(passwordEncoder.encode(temporaryPassword));
-        staffAccountEntity.setStatus(Status.ACTIVE);
-        staffAccountEntity.setMustChangePassword(true);
-        staffAccountEntity.setFailedLoginAttempts(0);
-        repository.save(staffAccountEntity);
+        staffAccount.setPasswordHash(passwordEncoder.encode(temporaryPassword));
+        staffAccount.setStatus(Status.ACTIVE);
+        staffAccount.setMustChangePassword(true);
+        staffAccount.setFailedLoginAttempts(0);
+        repository.save(staffAccount);
 
 
-        StaffAccountCreateResponse stuffAccountResponse = new StaffAccountCreateResponse();
-        stuffAccountResponse.setId(staffAccountEntity.getId());
-        stuffAccountResponse.setPhoneNumber(staffAccountEntity.getPhoneNumber());
-        stuffAccountResponse.setTemporaryPassword(temporaryPassword);
-        stuffAccountResponse.setRole(request.getRole());
+        StaffAccountCreateResponse response = new StaffAccountCreateResponse();
+        response.setId(staffAccount.getId());
+        response.setPhoneNumber(staffAccount.getPhoneNumber());
+        response.setTemporaryPassword(temporaryPassword);
+        response.setRole(request.getRole());
 
-        return stuffAccountResponse;
+        return response;
     }
 
     @Transactional
@@ -201,9 +201,16 @@ public class StaffAccountService {
         StaffAccountEntity account = getById(staffID);
 
         if(!passwordEncoder.matches(oldPassword, account.getPasswordHash())){
-            throw new AuthenticationException(
+            throw new CustomAuthenticationException(
                     ErrorCode.INVALID_CURRENT_PASSWORD,
                     "Текущий пароль неверный, просьба проверить и снова попробовать"
+            );
+        }
+
+        if(oldPassword.equals(newPassword)){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Новый пароль должен отличаться от старого, просьба сменить"
             );
         }
 
@@ -257,8 +264,8 @@ public class StaffAccountService {
     @Transactional(readOnly = true)
     public StaffAccountEntity getStaffAccount(String phoneNumber){
         return repository.findByPhoneNumber(phoneNumber)
-                .orElseThrow(() -> new AuthenticationException(
-                        ErrorCode.STAFF_NOT_FOUND,
+                .orElseThrow(() -> new CustomAuthenticationException(
+                        ErrorCode.INVALID_CREDENTIALS,
                         "Неверный телефон или пароль"
                 ));
     }

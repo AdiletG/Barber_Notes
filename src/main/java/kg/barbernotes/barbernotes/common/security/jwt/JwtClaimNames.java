@@ -10,6 +10,7 @@ public final class JwtClaimNames {
     public static final String BRANCH_ID = "branchId";
     public static final String STAFF_ACCOUNT_ID = "staffAccountId";
     public static final String CUSTOMER_ID = "customerId";
+    public static final String MUST_CHANGE_PASSWORD = "mustChangePassword";
 
 
     private JwtClaimNames() {}

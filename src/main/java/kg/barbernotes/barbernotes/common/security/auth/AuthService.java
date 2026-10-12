@@ -4,7 +4,7 @@ import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.StaffRole;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.enums.SubjectType;
-import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
+import kg.barbernotes.barbernotes.common.exceptions.CustomAuthenticationException;
 import kg.barbernotes.barbernotes.common.security.auth.dto.AuthResult;
 import kg.barbernotes.barbernotes.common.security.auth.dto.ChangePasswordRequest;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtClaimNames;
@@ -42,7 +42,7 @@ public class AuthService {
         CustomerEntity customer = customerService.getByPhoneNumber(phoneNumber);
 
         if(customer.getStatus() != Status.ACTIVE) {
-            throw new AuthenticationException(
+            throw new CustomAuthenticationException(
                     ErrorCode.CUSTOMER_NOT_FOUND,
                     "Пользователь не найден"
             );
@@ -55,14 +55,14 @@ public class AuthService {
         RefreshTokenService.IssuedRefreshToken refresh =
                 refreshTokenService.issue(customer.getId(), SubjectType.CUSTOMER);
 
-        return new AuthResult(access, refresh.rawToken(), SubjectType.CUSTOMER);
+        return new AuthResult(access, refresh.rawToken(), SubjectType.CUSTOMER, Boolean.FALSE);
     }
 
     public void requestCustomerOtp(String phoneNumber){
         CustomerEntity customer = customerService.getByPhoneNumber(phoneNumber);
 
         if(customer.getStatus() != Status.ACTIVE) {
-            throw new AuthenticationException(
+            throw new CustomAuthenticationException(
                     ErrorCode.CUSTOMER_NOT_FOUND,
                     "Пользователь не найден"
             );
@@ -77,12 +77,14 @@ public class AuthService {
         staffAccountService.changePassword(staffAccount.getId(), request.getOldPassword(), request.getNewPassword());
         refreshTokenService.revokeAllForSubject(staffId, SubjectType.STAFF);
 
+        staffAccount =  staffAccountService.getById(staffId);
         Map<String, Object> extraClaims = buildStaffClaims(staffAccount);
-        RefreshTokenService.IssuedRefreshToken refresh = refreshTokenService.issue(staffAccount.getId(), SubjectType.STAFF);
+        RefreshTokenService.IssuedRefreshToken refresh =
+                refreshTokenService.issue(staffAccount.getId(), SubjectType.STAFF);
         String access = jwtService.generateStaffAccessToken(staffAccount.getId(),
                 staffAccount.getRole(), extraClaims);
 
-        return new AuthResult(access, refresh.rawToken(), SubjectType.STAFF);
+        return new AuthResult(access, refresh.rawToken(), SubjectType.STAFF, staffAccount.getMustChangePassword());
     }
 
     public void logout(String rawRefreshToken) {
@@ -94,98 +96,109 @@ public class AuthService {
         RefreshTokenService.RotatedRefreshToken rotated = refreshTokenService.rotate(oldRawRefreshToken);
 
         if(rotated.subjectType() == SubjectType.STAFF){
-            StaffAccountEntity stuffAccount = staffAccountService.getById(rotated.subjectId());
+            StaffAccountEntity staffAccount = staffAccountService.getById(rotated.subjectId());
 
-            if(stuffAccount.getStatus() != Status.ACTIVE){
-                refreshTokenService.revokeAllForSubject(stuffAccount.getId(), SubjectType.STAFF);
-                throw new AuthenticationException(
-                        ErrorCode.STAFF_NOT_FOUND,
-                        "Неверный телефон или пароль"
+            if(staffAccount.getStatus() != Status.ACTIVE){
+                refreshTokenService.revokeAllForSubject(staffAccount.getId(), SubjectType.STAFF);
+                throw new CustomAuthenticationException(
+                        ErrorCode.UNAUTHORIZED,
+                        "Пользователь не найден"
                 );
 
             }
 
-            Map<String, Object> extraClaims = buildStaffClaims(stuffAccount);
+            Map<String, Object> extraClaims = buildStaffClaims(staffAccount);
 
-            String access = jwtService.generateStaffAccessToken(stuffAccount.getId(),
-                    stuffAccount.getRole(), extraClaims);
+            String access = jwtService.generateStaffAccessToken(staffAccount.getId(),
+                    staffAccount.getRole(), extraClaims);
 
-            return new AuthResult(access, rotated.rawRefreshToken(), SubjectType.STAFF);
+            return new AuthResult(
+                    access,
+                    rotated.rawRefreshToken(),
+                    SubjectType.STAFF,
+                    staffAccount.getMustChangePassword());
         }
 
             CustomerEntity customer = customerService.getById(rotated.subjectId());
 
             if(customer.getStatus() != Status.ACTIVE){
                 refreshTokenService.revokeAllForSubject(customer.getId(), SubjectType.CUSTOMER);
-                throw new AuthenticationException(
-                        ErrorCode.CUSTOMER_NOT_FOUND,
-                        "Клиент не найден"
+                throw new CustomAuthenticationException(
+                        ErrorCode.UNAUTHORIZED,
+                        "Пользователь не найден"
                 );
             }
             Map<String, Object> extraClaims = buildCustomerClaims(customer);
             String access = jwtService.generateCustomerAccessToken(customer.getId(), extraClaims);
-            return new AuthResult(access, rotated.rawRefreshToken(),  SubjectType.CUSTOMER);
+            return new AuthResult(access, rotated.rawRefreshToken(),  SubjectType.CUSTOMER, Boolean.FALSE);
 
     }
 
     public AuthResult staffLogin(String phoneNumber, String rawPassword){
-        StaffAccountEntity stuffAccount = staffAccountService.getStaffAccount(phoneNumber);
+        StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(phoneNumber);
 
-        if(stuffAccount.getStatus() != Status.ACTIVE){
-            throw new AuthenticationException(
-                    ErrorCode.STAFF_NOT_FOUND,
+        if(staffAccount.getStatus() != Status.ACTIVE){
+            throw new CustomAuthenticationException(
+                    ErrorCode.INVALID_CREDENTIALS,
                     "Неверный телефон или пароль"
             );
         }
 
-        if(stuffAccount.getLockedUntil() != null &&
-                stuffAccount.getLockedUntil().isAfter(OffsetDateTime.now(ZoneOffset.UTC))){
-            throw new AuthenticationException(
+        if(staffAccount.getLockedUntil() != null &&
+                staffAccount.getLockedUntil().isAfter(OffsetDateTime.now(ZoneOffset.UTC))){
+            throw new CustomAuthenticationException(
                     ErrorCode.ACCOUNT_IS_TEMPORARILY_BLOCKED,
                     "Аккаунт временно заблокирован, попробуйте позже"
             );
         }
 
-        if(!passwordEncoder.matches(rawPassword, stuffAccount.getPasswordHash())){
-            staffAccountService.recordFailedAttempt(stuffAccount.getId());
-            throw new AuthenticationException(
-                    ErrorCode.STAFF_NOT_FOUND,
+        if(!passwordEncoder.matches(rawPassword, staffAccount.getPasswordHash())){
+            staffAccountService.recordFailedAttempt(staffAccount.getId());
+            throw new CustomAuthenticationException(
+                    ErrorCode.INVALID_CREDENTIALS,
                     "Неверный телефон или пароль"
             );
         }
 
-        staffAccountService.recordSuccessfulLogin(stuffAccount.getId());
+        staffAccountService.recordSuccessfulLogin(staffAccount.getId());
 
-        Map<String, Object> extraClaims = buildStaffClaims(stuffAccount);
+        Map<String, Object> extraClaims = buildStaffClaims(staffAccount);
 
-        String access = jwtService.generateStaffAccessToken(stuffAccount.getId(),
-                stuffAccount.getRole(), extraClaims);
+        String access = jwtService.generateStaffAccessToken(staffAccount.getId(),
+                staffAccount.getRole(), extraClaims);
 
-        RefreshTokenService.IssuedRefreshToken refresh = refreshTokenService.issue(stuffAccount.getId(), SubjectType.STAFF);
+        RefreshTokenService.IssuedRefreshToken refresh =
+                refreshTokenService.issue(staffAccount.getId(), SubjectType.STAFF);
 
-        return new AuthResult(access, refresh.rawToken(), SubjectType.STAFF);
+        return new AuthResult(
+                access,
+                refresh.rawToken(),
+                SubjectType.STAFF,
+                staffAccount.getMustChangePassword());
     }
 
     private Map<String, Object> buildCustomerClaims(CustomerEntity customer){
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put(JwtClaimNames.CUSTOMER_ID, customer.getId());
+        extraClaims.put(JwtClaimNames.MUST_CHANGE_PASSWORD, Boolean.FALSE);
         return extraClaims;
     }
 
-    private Map<String, Object> buildStaffClaims(StaffAccountEntity stuffAccount){
+    private Map<String, Object> buildStaffClaims(StaffAccountEntity staffAccount){
         Map<String, Object> extraClaims = new HashMap<>();
 
-        if(stuffAccount.getRole() == StaffRole.BARBER){
-            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  stuffAccount.getId());
-            extraClaims.put(JwtClaimNames.BARBER_ID, stuffAccount.getBarberEntity().getId());
-            extraClaims.put(JwtClaimNames.BRANCH_ID, stuffAccount.getBranchEntity().getId());
-        } else if (stuffAccount.getRole() == StaffRole.BRANCH_ADMIN) {
-            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  stuffAccount.getId());
-            extraClaims.put(JwtClaimNames.BRANCH_ID, stuffAccount.getBranchEntity().getId());
+        if(staffAccount.getRole() == StaffRole.BARBER){
+            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  staffAccount.getId());
+            extraClaims.put(JwtClaimNames.BARBER_ID, staffAccount.getBarberEntity().getId());
+            extraClaims.put(JwtClaimNames.BRANCH_ID, staffAccount.getBranchEntity().getId());
+        } else if (staffAccount.getRole() == StaffRole.BRANCH_ADMIN) {
+            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  staffAccount.getId());
+            extraClaims.put(JwtClaimNames.BRANCH_ID, staffAccount.getBranchEntity().getId());
         }else {
-            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  stuffAccount.getId());
+            extraClaims.put(JwtClaimNames.STAFF_ACCOUNT_ID,  staffAccount.getId());
         }
 
+        extraClaims.put(JwtClaimNames.MUST_CHANGE_PASSWORD, staffAccount.getMustChangePassword());
         return extraClaims;
     }
 }

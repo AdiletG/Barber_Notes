@@ -2,7 +2,7 @@ package kg.barbernotes.barbernotes.telegram.handlers;
 
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
-import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
+import kg.barbernotes.barbernotes.common.exceptions.CustomAuthenticationException;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.otp.OtpService;
@@ -26,9 +26,9 @@ public class TelegramContactHandler {
             CustomerEntity customerEntity = customerService.getByPhoneNumber(phoneNumber);
 
             if(customerEntity.getStatus() != Status.ACTIVE) {
-                throw new AuthenticationException(
-                        ErrorCode.CUSTOMER_STATUS_IS_INACTIVE,
-                        "Customer not found"
+                throw new CustomAuthenticationException(
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Пользователь не найден"
                 );
             }
 

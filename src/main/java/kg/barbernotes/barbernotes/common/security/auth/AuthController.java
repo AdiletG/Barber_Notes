@@ -39,7 +39,7 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
-        return new AccessTokenResponse(authResult.getAccessToken());
+        return new AccessTokenResponse(authResult.getAccessToken(), Boolean.FALSE);
     }
 
     @PostMapping("/customer/otp/request")
@@ -61,7 +61,7 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
-        return new AccessTokenResponse(authResult.getAccessToken());
+        return new AccessTokenResponse(authResult.getAccessToken(), authResult.getMustChangePassword());
     }
 
     @PostMapping("/logout")
@@ -95,7 +95,7 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
-        return new AccessTokenResponse(authResult.getAccessToken());
+        return new AccessTokenResponse(authResult.getAccessToken(),  authResult.getMustChangePassword());
     }
 
     @PostMapping("/refresh")
@@ -109,7 +109,7 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
-        return new AccessTokenResponse(authResult.getAccessToken());
+        return new AccessTokenResponse(authResult.getAccessToken(),  authResult.getMustChangePassword());
     }
 
 

@@ -14,4 +14,5 @@ public class AuthResult {
     private String accessToken;
     private String refreshToken;
     private SubjectType  subjectType;
+    private Boolean mustChangePassword;
 }

@@ -58,7 +58,7 @@ public class CustomerService {
         return customerRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.CUSTOMER_NOT_FOUND,
-                        "Пользователь с таким номером не найден"
+                        "Пользователь не найден"
                 ));
     }
 

@@ -9,7 +9,8 @@ public record AuthenticatedUser(
         UUID subjectId,
         UserRole role,
         UUID barberId,   // null, если не BARBER
-        UUID branchId    // null, если не BARBER/BRANCH_ADMIN
+        UUID branchId,  // null, если не BARBER/BRANCH_ADMIN
+        boolean mustChangePassword
 ) {
 
     public boolean belongsToBranch(UUID id) {

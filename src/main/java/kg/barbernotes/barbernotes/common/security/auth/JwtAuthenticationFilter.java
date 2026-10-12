@@ -8,7 +8,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.TokenType;
 import kg.barbernotes.barbernotes.common.enums.UserRole;
+import kg.barbernotes.barbernotes.common.exceptions.BaseException;
+import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.InvalidTokenException;
+import kg.barbernotes.barbernotes.common.security.CustomAuthenticationEntryPoint;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtClaimNames;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtService;
 import lombok.extern.slf4j.Slf4j;
@@ -35,14 +38,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService  jwtService;
     private final HandlerExceptionResolver resolver;
 
+
     private static final Set<String> PUBLIC = Set.of(
             "/api/v1/auth/refresh", "/api/v1/auth/logout", "/api/v1/auth/staff-login",
             "/api/v1/auth/customer/otp/request", "/api/v1/auth/customer/otp/verify");
 
+    private static final String CHANGE_PASSWORD_PATH = "/api/v1/auth/change-password";
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.jwtService = jwtService;
         this.resolver = resolver;
     }
@@ -77,6 +82,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             AuthenticatedUser user = buildUser(claims);
                 List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.role().name()));
 
+            if(user.mustChangePassword()) {
+                if(!request.getServletPath().equals(CHANGE_PASSWORD_PATH)) {
+                    throw new BusinessRuleViolationException(
+                            ErrorCode.PASSWORD_CHANGE_REQUIRED,
+                            "Смена временного пароля обязательна"
+                    );
+                }
+            }
 
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(user, null, authorities)
@@ -84,7 +97,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
 
-        }catch (InvalidTokenException e){
+        }catch (BaseException e){
             SecurityContextHolder.clearContext();
             resolver.resolveException(request, response, null, e);
             return;
@@ -100,13 +113,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 throw new InvalidTokenException(ErrorCode.INVALID_TOKEN, "Токен недействителен");
             }
 
-            UUID subjectID = UUID.fromString(claims.getSubject());
+            UUID subjectID = parseUuid(claims.getSubject());
+            if(subjectID == null){
+                throw new InvalidTokenException(ErrorCode.INVALID_TOKEN, "Токен недействителен");
+            }
+
             UUID barberId = parseUuid(claims.get(JwtClaimNames.BARBER_ID, String.class));
             UUID branchId = parseUuid(claims.get(JwtClaimNames.BRANCH_ID, String.class));
+            boolean mustChangePassword = Boolean.TRUE.equals(claims.get(JwtClaimNames.MUST_CHANGE_PASSWORD, Boolean.class));
 
-            return new  AuthenticatedUser(subjectID, UserRole.valueOf(role), barberId, branchId);
+            return new  AuthenticatedUser(subjectID, UserRole.valueOf(role), barberId, branchId,  mustChangePassword);
 
-        }catch (IllegalArgumentException | NullPointerException e){
+        }catch (IllegalArgumentException e){
             throw new InvalidTokenException(ErrorCode.INVALID_TOKEN, "Токен недействителен");
         }
     }

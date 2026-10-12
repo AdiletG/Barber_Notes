@@ -25,6 +25,6 @@ public class StaffAccountCreateRequest {
 
     private UUID branchId;
 
-    @NotNull(message = "Роль обязательна для заполнение")
+    @NotNull(message = "Роль обязательна для заполнения")
     private StaffRole role;
 }
