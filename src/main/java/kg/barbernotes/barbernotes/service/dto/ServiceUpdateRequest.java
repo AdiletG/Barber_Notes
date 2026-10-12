@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.service;
+package kg.barbernotes.barbernotes.service.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceCreateRequest {
+public class ServiceUpdateRequest {
 
     @NotNull(message = "Сервис должен иметь категорию")
     private UUID categoryId;

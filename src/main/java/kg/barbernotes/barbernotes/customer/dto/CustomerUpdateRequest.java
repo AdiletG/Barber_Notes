@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.customer;
+package kg.barbernotes.barbernotes.customer.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

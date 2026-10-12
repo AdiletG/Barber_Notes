@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.service;
+package kg.barbernotes.barbernotes.service.dto;
 
 import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.AllArgsConstructor;

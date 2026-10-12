@@ -6,6 +6,11 @@ import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
+import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
+import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryCreateRequest;
+import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryResponse;
+import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -22,9 +27,18 @@ public class ServiceCategoryService {
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final ServiceCategoryMapper serviceCategoryMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final CurrentUserProvider currentUserProvider;
 
     @Transactional
     public ServiceCategoryResponse update(UUID id, ServiceCategoryUpdateRequest request) {
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        if(!currentUser.isSuperAdmin()){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Изменение категорий услуг доступно только Супер Админу"
+            );
+        }
         ServiceCategoryEntity category = serviceCategoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.SERVICE_CATEGORY_NOT_FOUND,
@@ -38,12 +52,21 @@ public class ServiceCategoryService {
 
     @Transactional
     public ServiceCategoryResponse create(ServiceCategoryCreateRequest request) {
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        if(!currentUser.isSuperAdmin()){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Создание категорий услуг доступно только Супер Админу"
+            );
+        }
+
         ServiceCategoryEntity category = serviceCategoryMapper.toEntity(request);
 
         if(serviceCategoryRepository.existsByName((category.getName()))){
             throw new BusinessRuleViolationException(
                     ErrorCode.NAME_ALREADY_EXISTS,
-                    "Категория с таким " + category.getName() + " именем уже существует"
+                    "Категория с названием '" + category.getName() + "' уже существует"
             );
         }
 
@@ -54,6 +77,15 @@ public class ServiceCategoryService {
 
     @Transactional
     public ServiceCategoryResponse updateStatus(UUID id, StatusUpdateRequest request) {
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        if(!currentUser.isSuperAdmin()){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Изменение категорий услуг доступно только Супер Админу"
+            );
+        }
+
         ServiceCategoryEntity category = serviceCategoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.SERVICE_CATEGORY_NOT_FOUND,

@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final JwtAuthenticationFilter  jwtAuthenticationFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final PublicEndpointPolicy publicEndpointPolicy;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -28,22 +29,7 @@ public class SecurityConfig {
                 .exceptionHandling(exception ->
                         exception.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/customer/otp/verify").permitAll()
-                        .requestMatchers("/api/v1/auth/customer/otp/request").permitAll()
-                        .requestMatchers("/api/v1/auth/staff-login").permitAll()
-                        .requestMatchers("/api/v1/auth/refresh").permitAll()
-                        .requestMatchers("/api/v1/auth/logout").permitAll()
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/branches/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/v1/service-categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/services/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/barbers/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/appointments").permitAll()
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
+                        .requestMatchers(publicEndpointPolicy.matchers()).permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

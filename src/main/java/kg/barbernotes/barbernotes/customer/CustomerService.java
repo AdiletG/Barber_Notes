@@ -7,6 +7,8 @@ import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
+import kg.barbernotes.barbernotes.customer.dto.CustomerResponse;
+import kg.barbernotes.barbernotes.customer.dto.CustomerUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

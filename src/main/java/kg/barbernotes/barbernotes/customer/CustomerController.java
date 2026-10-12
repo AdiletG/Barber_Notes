@@ -6,6 +6,8 @@ import kg.barbernotes.barbernotes.appointment.AppointmentResponse;
 import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.Status;
+import kg.barbernotes.barbernotes.customer.dto.CustomerResponse;
+import kg.barbernotes.barbernotes.customer.dto.CustomerUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

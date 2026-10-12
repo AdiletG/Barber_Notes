@@ -11,7 +11,7 @@ import kg.barbernotes.barbernotes.common.enums.UserRole;
 import kg.barbernotes.barbernotes.common.exceptions.BaseException;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.InvalidTokenException;
-import kg.barbernotes.barbernotes.common.security.CustomAuthenticationEntryPoint;
+import kg.barbernotes.barbernotes.common.security.PublicEndpointPolicy;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtClaimNames;
 import kg.barbernotes.barbernotes.common.security.jwt.JwtService;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,6 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -37,24 +36,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService  jwtService;
     private final HandlerExceptionResolver resolver;
+    private final PublicEndpointPolicy endpointPolicy;
 
-
-    private static final Set<String> PUBLIC = Set.of(
-            "/api/v1/auth/refresh", "/api/v1/auth/logout", "/api/v1/auth/staff-login",
-            "/api/v1/auth/customer/otp/request", "/api/v1/auth/customer/otp/verify");
+//
+//    private static final Set<String> PUBLIC = Set.of(
+//            "/api/v1/auth/refresh", "/api/v1/auth/logout", "/api/v1/auth/staff-login",
+//            "/api/v1/auth/customer/otp/request", "/api/v1/auth/customer/otp/verify");
 
     private static final String CHANGE_PASSWORD_PATH = "/api/v1/auth/change-password";
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver,
+            PublicEndpointPolicy endpointPolicy
+    ) {
         this.jwtService = jwtService;
         this.resolver = resolver;
+        this.endpointPolicy = endpointPolicy;
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        return PUBLIC.contains(request.getServletPath());
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        return endpointPolicy.isPublic(request);
     }
 
     @Override
