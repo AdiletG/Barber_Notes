@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.work_shift;
+package kg.barbernotes.barbernotes.work_shift.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

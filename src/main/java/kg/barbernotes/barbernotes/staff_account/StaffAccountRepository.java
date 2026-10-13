@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface StaffAccountRepository extends JpaRepository<StaffAccountEntity, UUID> {
-    Boolean existsByPhoneNumber(String phoneNumber);
+    boolean existsByPhoneNumber(String phoneNumber);
+    boolean existsByBarberEntity_Id(UUID id);
     Optional<StaffAccountEntity> findByPhoneNumber(String phoneNumber);
 }

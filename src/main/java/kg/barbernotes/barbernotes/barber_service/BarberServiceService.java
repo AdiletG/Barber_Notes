@@ -8,6 +8,8 @@ import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.event.BarberServiceDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
+import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
 import kg.barbernotes.barbernotes.service.ServiceEntity;
 import kg.barbernotes.barbernotes.service.ServiceService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +28,7 @@ public class BarberServiceService {
     private final BarberServiceMapper barberServiceMapper;
     private final BarberService barberService;
     private final ServiceService serviceService;
-
+    private final CurrentUserProvider currentUserProvider;
 
     @Transactional
     public BarberServiceResponse create(UUID barberId, AddBarberServiceRequest request){
@@ -36,23 +38,18 @@ public class BarberServiceService {
         Optional<BarberServiceEntity> barberServiceEntity = barberServiceRepository
                 .findByBarberEntity_IdAndServiceEntity_Id(barber.getId(), service.getId());
 
-        BarberServiceEntity entityToSave;
-
-        if(barberServiceEntity.isPresent()) {
-            BarberServiceEntity existing =  barberServiceEntity.get();
-
-                if(existing.getStatus() == Status.INACTIVE) {
+        BarberServiceEntity entityToSave = barberServiceEntity
+                .map(existing -> {
                     existing.setStatus(Status.ACTIVE);
-                    entityToSave = existing;
-                }else {
-                    entityToSave = existing;
-                }
-        }else {
-            entityToSave = new BarberServiceEntity();
-            entityToSave.setBarberEntity(barber);
-            entityToSave.setServiceEntity(service);
-            entityToSave.setStatus(Status.ACTIVE);
-        }
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    BarberServiceEntity created = new BarberServiceEntity();
+                    created.setBarberEntity(barber);
+                    created.setServiceEntity(service);
+                    created.setStatus(Status.ACTIVE);
+                    return created;
+                });
 
         barberServiceRepository.save(entityToSave);
         return barberServiceMapper.toResponse(entityToSave);
@@ -60,6 +57,9 @@ public class BarberServiceService {
 
     @Transactional
     public BarberServiceResponse updateStatus(UUID barberId, UUID serviceId, StatusUpdateRequest request) {
+
+        checkCurrentUser(barberId);
+
         BarberServiceEntity serviceEntity = barberServiceRepository
                 .findByBarberEntity_IdAndServiceEntity_Id(barberId, serviceId)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -97,6 +97,16 @@ public class BarberServiceService {
     }
 
     @Transactional(readOnly = true)
+    public BarberServiceEntity getServiceByBarberId(UUID barberId,  UUID serviceId) {
+        return barberServiceRepository.findByBarberEntity_IdAndServiceEntity_Id(barberId, serviceId)
+                .orElseThrow( () -> new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Барбер не оказывает выбранную услугу"
+                )
+        );
+    }
+
+    @Transactional(readOnly = true)
     public List<BarberServiceResponse> getByBarberIdServiceId(UUID barberId, UUID serviceId) {
         return barberServiceRepository.findByBarberEntity_IdAndServiceEntity_Id(barberId, serviceId)
                 .stream()
@@ -126,5 +136,20 @@ public class BarberServiceService {
                 barberId, serviceId, status).stream()
                 .map(barberServiceMapper::toResponse)
                 .toList();
+    }
+
+    private void checkCurrentUser(UUID barberID) {
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        BarberEntity barber = barberService.getById(barberID);
+
+        if("BRANCH_ADMIN".equals(currentUser.role())){
+            if(!barber.getBranchEntity().getId().equals(currentUser.subjectId())){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Сервисы барбера могут изменять только Администраторы филиала к которому привязан барбер"
+                );
+            }
+        }
     }
 }

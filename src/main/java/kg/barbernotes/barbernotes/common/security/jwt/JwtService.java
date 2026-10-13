@@ -5,9 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import kg.barbernotes.barbernotes.common.enums.ErrorCode;
-import kg.barbernotes.barbernotes.common.enums.StaffRole;
-import kg.barbernotes.barbernotes.common.enums.SubjectType;
+import kg.barbernotes.barbernotes.common.enums.*;
 import kg.barbernotes.barbernotes.common.exceptions.InvalidTokenException;
 import org.springframework.stereotype.Service;
 
@@ -24,40 +22,37 @@ public class JwtService {
     private final JwtProperties  jwtProperties;
     private final SecretKey secretKey;
 
+
     public JwtService(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
         this.secretKey = Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
     }
 
     public Instant calculateRefreshExpiry(SubjectType subjectType) {
-        Duration ttl = subjectType == SubjectType.CUSTOMER
-                ? Duration.ofMinutes(jwtProperties.customer().refreshTtlMinutes())
-                : Duration.ofMinutes(jwtProperties.staff().refreshTtlMinutes());
+        Duration ttl = refreshTtl(subjectType);
         return Instant.now().plus(ttl);
     }
 
     public String generateCustomerAccessToken(UUID subjectId, Map<String, Object> extraClaims) {
         Map<String, Object> claims = new HashMap<>(extraClaims);
-        claims.put("role", "CUSTOMER");
+        claims.put(JwtClaimNames.ROLE, UserRole.CUSTOMER.name());
         Duration ttl = Duration.ofMinutes(jwtProperties.customer().accessTtlMinutes());
 
-        return buildToken(subjectId.toString(), claims, "access", ttl);
+        return buildToken(subjectId.toString(), claims, TokenType.ACCESS.name(), ttl);
     }
 
     public String generateStaffAccessToken(UUID subjectId, StaffRole role, Map<String, Object> extraClaims) {
         Map<String, Object> claims = new HashMap<>(extraClaims);
-        claims.put("role", role.name());
+        claims.put(JwtClaimNames.ROLE, role.name());
         Duration ttl = Duration.ofMinutes(jwtProperties.staff().accessTtlMinutes());
 
-        return buildToken(subjectId.toString(), claims, "access", ttl);
+        return buildToken(subjectId.toString(), claims, TokenType.ACCESS.name(), ttl);
     }
 
     public String generateRefreshToken(UUID subjectId, SubjectType subjectType) {
-        Duration ttl = subjectType == SubjectType.CUSTOMER
-                ? Duration.ofMinutes(jwtProperties.customer().refreshTtlMinutes())
-                : Duration.ofMinutes(jwtProperties.staff().refreshTtlMinutes());
+        Duration ttl = refreshTtl(subjectType);
 
-        return buildToken(subjectId.toString(), Map.of(), "refresh", ttl);
+        return buildToken(subjectId.toString(), Map.of(), TokenType.REFRESH.name(), ttl);
     }
 
     private String buildToken(String subject, Map<String, Object> extraClaims, String tokenType,Duration ttl) {
@@ -67,7 +62,8 @@ public class JwtService {
         return Jwts.builder()
                 .subject(subject)
                 .claims(extraClaims)
-                .claim("tokenType", tokenType)
+                .claim(JwtClaimNames.TOKEN_TYPE, tokenType)
+                .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiration))
                 .signWith(secretKey)
@@ -83,7 +79,7 @@ public class JwtService {
                     .getPayload();
         }catch (ExpiredJwtException e){
             throw new InvalidTokenException(ErrorCode.TOKEN_EXPIRED, "Токен истёк");
-        }catch (JwtException e){
+        }catch (JwtException | IllegalArgumentException e){
             throw new InvalidTokenException(ErrorCode.INVALID_TOKEN, "Токен недействителен");
         }
     }
@@ -96,5 +92,11 @@ public class JwtService {
         }catch (NoSuchAlgorithmException e){
             throw new IllegalStateException("SHA-256 недоступен", e);
         }
+    }
+
+    private Duration refreshTtl(SubjectType subjectType) {
+       return subjectType == SubjectType.CUSTOMER
+                ? Duration.ofMinutes(jwtProperties.customer().refreshTtlMinutes())
+                : Duration.ofMinutes(jwtProperties.staff().refreshTtlMinutes());
     }
 }

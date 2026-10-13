@@ -37,47 +37,57 @@ public class RefreshTokenService {
 
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = TokenReuseDetectedException.class)
     public RotatedRefreshToken rotate(String oldRawToken){
 
         String tokenHash = jwtService.hashToken(oldRawToken);
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+        int updated = refreshTokenRepository.revokeIfActive(tokenHash, now);
+
         RefreshTokenEntity findTokenHash = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new InvalidTokenException(
                         ErrorCode.INVALID_TOKEN,
                         "Такого токена не существует"
                 ));
 
-        if(findTokenHash.getRevokedAt() != null){
-            revokeAllForSubject(findTokenHash.getSubjectId());
-            throw new TokenReuseDetectedException(
-                    ErrorCode.INVALID_TOKEN,
-                    "Ваша сессия скомпрометирована, войдите заново"
-            );
+        if(updated == 1){
+
+            IssuedRefreshToken newRowToken = issue(findTokenHash.getSubjectId(), findTokenHash.getSubjectType());
+            findTokenHash.setReplacedById(newRowToken.entityId());
+
+            return new RotatedRefreshToken(newRowToken.rawToken(), findTokenHash.getSubjectId(), findTokenHash.getSubjectType());
+
         }
 
-        if(findTokenHash.getExpiresAt().isBefore(OffsetDateTime.now(ZoneOffset.UTC))){
-            throw new InvalidTokenException(
-                    ErrorCode.TOKEN_EXPIRED,
-                    "Время жизни токена истекло"
-            );
-        }
 
-        IssuedRefreshToken newRowToken = issue(findTokenHash.getSubjectId(), findTokenHash.getSubjectType());
-        findTokenHash.setRevokedAt(OffsetDateTime.now(ZoneOffset.UTC));
-        findTokenHash.setReplacedById(newRowToken.entityId());
-        refreshTokenRepository.save(findTokenHash);
+            if(findTokenHash.getRevokedAt() != null){
+                revokeAllForSubject(findTokenHash.getSubjectId(),  findTokenHash.getSubjectType());
+                throw new TokenReuseDetectedException(
+                        ErrorCode.INVALID_TOKEN,
+                        "Ваша сессия скомпрометирована, войдите заново"
+                );
+            }
 
-        return new RotatedRefreshToken(newRowToken.rawToken(), findTokenHash.getSubjectId(), findTokenHash.getSubjectType());
+
+                throw new InvalidTokenException(
+                        ErrorCode.TOKEN_EXPIRED,
+                        "Время жизни токена истекло"
+                );
     }
 
+    @Transactional
     public void revokeByRawToken(String rawToken) {
         String tokenHash = jwtService.hashToken(rawToken);
         refreshTokenRepository.findByTokenHash(tokenHash)
-                .ifPresent(entity -> revokeAllForSubject(entity.getSubjectId()));
+                .ifPresent(entity -> revokeAllForSubject(entity.getSubjectId(), entity.getSubjectType()));
     }
 
-    public void revokeAllForSubject(UUID subjectId) {
-        List<RefreshTokenEntity> list = refreshTokenRepository.findAllBySubjectIdAndRevokedAtIsNull(subjectId);
+    @Transactional
+    public void revokeAllForSubject(UUID subjectId, SubjectType subjectType) {
+        List<RefreshTokenEntity> list =
+                refreshTokenRepository.findAllBySubjectIdAndSubjectTypeAndRevokedAtIsNull(subjectId, subjectType);
         for (RefreshTokenEntity refreshTokenEntity : list) {
             refreshTokenEntity.setRevokedAt(OffsetDateTime.now(ZoneOffset.UTC));
         }

@@ -1,19 +1,27 @@
 package kg.barbernotes.barbernotes.work_shift;
 
 import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
+import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
 import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
 import kg.barbernotes.barbernotes.barber.*;
-import kg.barbernotes.barbernotes.branch.BranchResponse;
+import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
+import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
+import kg.barbernotes.barbernotes.work_shift.dto.AvailableResponse;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftRequest;
+import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,9 +34,45 @@ public class WorkShiftService {
     private final BranchService branchService;
     private final BarberService barberService;
     private final AppointmentBookingService appointmentBookingService;
+    private final CurrentUserProvider currentUserProvider;
+
+
+    @Transactional(readOnly = true)
+    public List<AvailableResponse> availableSlot(UUID barberId, LocalDate date, int durationMinutes) {
+        WorkShiftEntity workShift = getByBarberIdWorkDate(barberId, date);
+        List<AppointmentEntity> appointments =
+                appointmentBookingService.getAppointmentByBarberIdAndDate(barberId, date);
+
+        final int STEP_MINUTES = 15;
+
+        List<AvailableResponse> slots = new ArrayList<>();
+
+        LocalTime slotStart = workShift.getStartTime();
+        LocalTime wsEndTime = workShift.getEndTime();
+
+        while (!slotStart.plusMinutes(durationMinutes).isAfter(wsEndTime)) {
+            LocalTime slotEnd = slotStart.plusMinutes(durationMinutes);
+            final LocalTime start = slotStart;
+
+            boolean busy = appointments.stream().anyMatch(a -> {
+                LocalTime aStartTime = a.getStartTime();
+                LocalTime aEndTime = aStartTime.plusMinutes(a.getTotalDurationMinutes());
+
+                return start.isBefore(aEndTime) && aStartTime.isBefore(slotEnd);
+            });
+
+            slots.add(new AvailableResponse(date, slotStart, slotEnd, !busy));
+
+            slotStart = slotStart.plusMinutes(STEP_MINUTES);
+
+        }
+
+
+        return slots;
+    }
 
     @Transactional
-    public WorkShiftResponse update(UUID workShiftId, WorkShiftUpdateRequest request) {
+    public WorkShiftResponse update(UUID workShiftId, WorkShiftRequest request) {
         WorkShiftEntity workShift = workShiftRepository.findById(workShiftId)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.WORK_SHIFT_NOT_FOUND,
@@ -36,22 +80,11 @@ public class WorkShiftService {
                 ));
 
         BarberEntity barber = barberService.getById(workShift.getBarberEntity().getId());
-        BranchResponse branch = branchService.findById(barber.getBranchEntity().getId());
+        BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
-        if(request.getWorkDate().isBefore(LocalDate.now())) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Дата графика работы не может быть создана в прошлом"
-            );
-        }
+        checkCurrentUser(branch);
 
-        if(request.getStartTime().isBefore(branch.getOpenTime()) ||
-                request.getEndTime().isAfter(branch.getCloseTime())) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Время начала и конец рабочего дня должен быть в пределах работы филиала"
-            );
-        }
+        checkWorkShift(branch, request);
 
         workShiftMapper.updateEntity(request, workShift);
         workShiftRepository.save(workShift);
@@ -59,24 +92,13 @@ public class WorkShiftService {
     }
 
     @Transactional
-    public WorkShiftResponse create(UUID barberId, WorkShiftCreateRequest request){
+    public WorkShiftResponse create(UUID barberId, WorkShiftRequest request){
         BarberEntity barber = barberService.getById(barberId);
-        BranchResponse branch = branchService.findById(barber.getBranchEntity().getId());
+        BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
-        if(request.getWorkDate().isBefore(LocalDate.now())) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Дата графика работы не может быть создана в прошлом"
-            );
-        }
+        checkCurrentUser(branch);
 
-        if(request.getStartTime().isBefore(branch.getOpenTime()) ||
-                request.getEndTime().isAfter(branch.getCloseTime())) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Время начала и конец рабочего дня должен быть в пределах работы филиала"
-            );
-        }
+        checkWorkShift(branch,  request);
 
         WorkShiftEntity workShift = workShiftMapper.toEntity(request);
         workShift.setBarberEntity(barber);
@@ -99,6 +121,11 @@ public class WorkShiftService {
                         ErrorCode.WORK_SHIFT_NOT_FOUND,
                         "Графика по данному id не существует"
                 ));
+
+        BranchEntity branch = branchService.getById(workShift.getBarberEntity().getId());
+
+        checkCurrentUser(branch);
+
         if(appointmentBookingService.existsByBarberEntity_IdAndAppointmentDateAndStatus(
             workShift.getBarberEntity().getId(), workShift.getWorkDate(), AppointmentStatus.CONFIRMED
         )){
@@ -109,6 +136,15 @@ public class WorkShiftService {
         }
 
         workShiftRepository.delete(workShift);
+    }
+
+    @Transactional(readOnly = true)
+    public WorkShiftEntity getByBarberIdWorkDate(UUID barberId, LocalDate date) {
+        return workShiftRepository.findByBarberEntity_IdAndWorkDate(barberId, date)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.WORK_SHIFT_NOT_FOUND,
+                        "График барбер на этот день отсутствует"
+                ));
     }
 
 
@@ -136,6 +172,37 @@ public class WorkShiftService {
                 .stream()
                 .map(workShiftMapper::toResponse)
                 .toList();
+    }
+
+    private void checkWorkShift(BranchEntity branch, WorkShiftRequest request){
+
+        if(request.getWorkDate().isBefore(LocalDate.now())) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Дата графика работы не может быть создана в прошлом"
+            );
+        }
+
+        if(request.getStartTime().isBefore(branch.getOpenTime()) ||
+                request.getEndTime().isAfter(branch.getCloseTime())) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Время начала и конец рабочего дня должен быть в пределах работы филиала"
+            );
+        }
+    }
+
+    private void checkCurrentUser(BranchEntity branch) {
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        if("BRANCH_ADMIN".equals(currentUser.role())){
+            if(!branch.getId().equals(currentUser.subjectId())){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Данные барбере могут изменять только Администраторы филиала к которому привязан барбер"
+                );
+            }
+        }
     }
 
 }

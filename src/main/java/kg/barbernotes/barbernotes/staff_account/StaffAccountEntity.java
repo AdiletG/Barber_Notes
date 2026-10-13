@@ -29,7 +29,7 @@ public class StaffAccountEntity extends AuditableEntity {
     private StaffRole role;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "barber_id")
+    @JoinColumn(name = "barber_id", unique = true)
     private BarberEntity barberEntity;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -47,8 +47,8 @@ public class StaffAccountEntity extends AuditableEntity {
     private Integer failedLoginAttempts;
 
     @Column(name = "locked_until")
-    OffsetDateTime  lockedUntil;
+    private OffsetDateTime  lockedUntil;
 
     @Column(name = "last_login_at")
-    OffsetDateTime lastLoginAt;
+    private OffsetDateTime lastLoginAt;
 }

@@ -17,6 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter  jwtAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final PublicEndpointPolicy publicEndpointPolicy;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -24,19 +26,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/branches/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/v1/service-categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/services/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/barbers/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/barbers/*/shifts/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/appointments").permitAll()
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
+                        .requestMatchers(publicEndpointPolicy.matchers()).permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

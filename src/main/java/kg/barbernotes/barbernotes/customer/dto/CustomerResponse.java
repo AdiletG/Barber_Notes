@@ -1,5 +1,6 @@
-package kg.barbernotes.barbernotes.service_category;
+package kg.barbernotes.barbernotes.customer.dto;
 
+import kg.barbernotes.barbernotes.common.enums.Source;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,10 +13,11 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceCategoryResponse {
+public class CustomerResponse {
 
     private UUID id;
-    private String name;
-    private String description;
+    private String firstName;
+    private String phoneNumber;
+    private Source createdFrom;
     private Status status;
 }

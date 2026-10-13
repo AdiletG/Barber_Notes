@@ -1,5 +1,8 @@
 package kg.barbernotes.barbernotes.service;
 
+import kg.barbernotes.barbernotes.service.dto.ServiceCreateRequest;
+import kg.barbernotes.barbernotes.service.dto.ServiceResponse;
+import kg.barbernotes.barbernotes.service.dto.ServiceUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

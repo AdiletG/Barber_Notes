@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.work_shift;
+package kg.barbernotes.barbernotes.work_shift.dto;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +14,7 @@ import java.time.LocalTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkShiftCreateRequest {
+public class WorkShiftRequest {
 
     @NotNull(message = "Дата должны быть указана")
     @FutureOrPresent(message = "Дата не может быть прошедшем")

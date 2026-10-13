@@ -1,5 +1,7 @@
 package kg.barbernotes.barbernotes.customer;
 
+import kg.barbernotes.barbernotes.customer.dto.CustomerResponse;
+import kg.barbernotes.barbernotes.customer.dto.CustomerUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;

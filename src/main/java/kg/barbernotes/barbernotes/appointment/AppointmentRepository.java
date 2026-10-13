@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, UUID> {
@@ -15,6 +16,9 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
 
     Boolean existsByBarberEntity_IdAndAppointmentDateAndStatus(
             UUID barberEntity, LocalDate date, AppointmentStatus status);
+
+    List<AppointmentEntity> findAppointmentEntitiesByBarberEntity_IdAndAppointmentDate(
+            UUID barberEntity, LocalDate appointmentDate);
 
     @Query("""
             SELECT a FROM AppointmentEntity a \

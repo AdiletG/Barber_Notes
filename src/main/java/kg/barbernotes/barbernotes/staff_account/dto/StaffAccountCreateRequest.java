@@ -18,13 +18,13 @@ import java.util.UUID;
 public class StaffAccountCreateRequest {
 
     @NotBlank(message = "Номер телефона сотрудника обязателен")
-    @Pattern(regexp = "\\d{10,15}")
+    @Pattern(regexp = "\\d{10,15}", message = "Номер телефона должен содержать от 10 до 15 цифр")
     private String phoneNumber;
 
     private UUID barberId;
 
     private UUID branchId;
 
-    @NotNull
+    @NotNull(message = "Роль обязательна для заполнения")
     private StaffRole role;
 }

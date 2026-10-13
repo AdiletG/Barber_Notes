@@ -1,5 +1,8 @@
 package kg.barbernotes.barbernotes.service_category;
 
+import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryCreateRequest;
+import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryResponse;
+import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;

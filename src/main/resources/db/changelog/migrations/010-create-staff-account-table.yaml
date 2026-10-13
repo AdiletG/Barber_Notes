@@ -31,6 +31,8 @@ databaseChangeLog:
               - column:
                   name: barber_id
                   type: UUID
+                  constraints:
+                    unique: true
               - column:
                   name: branch_id
                   type: UUID
@@ -105,3 +107,11 @@ databaseChangeLog:
                       (role = 'BRANCH_ADMIN' AND barber_id IS NULL AND branch_id IS NOT NULL) OR
                       (role = 'SUPER_ADMIN' AND barber_id IS NULL AND branch_id IS NULL)
                     );"
+
+        - createIndex:
+            tableName: staff_account
+            indexName: idx_stuff_account_branch_id
+            unique: false
+            columns:
+              - column:
+                  name: branch_id

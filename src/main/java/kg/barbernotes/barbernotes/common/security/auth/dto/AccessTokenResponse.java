@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccessTokenResponse {
-    String accessToken;
+    private String accessToken;
+    private Boolean mustChangePassword;
 }

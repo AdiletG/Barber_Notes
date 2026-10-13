@@ -27,7 +27,7 @@ public class TelegramDispatcher {
 
 
             if(message.hasContact()){
-               contactHandler.checkCustomer(message.getContact().getPhoneNumber(),  chatId);
+                contactHandler.checkCustomer(message.getContact().getPhoneNumber(), chatId);
                return;
             }
 

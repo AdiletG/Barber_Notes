@@ -1,7 +1,7 @@
 package kg.barbernotes.barbernotes.common.security.otp;
 
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
-import kg.barbernotes.barbernotes.common.exceptions.AuthenticationException;
+import kg.barbernotes.barbernotes.common.exceptions.CustomAuthenticationException;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.customer.CustomerEntity;
 import kg.barbernotes.barbernotes.customer.CustomerService;
@@ -64,7 +64,7 @@ public class OtpService {
         }else {
             lastOtp.setAttempts(lastOtp.getAttempts() + 1);
             otpRepository.save(lastOtp);
-            throw new AuthenticationException(
+            throw new CustomAuthenticationException(
                     ErrorCode.INVALID_OTP,
                     "Неверный код, попробуйте еще раз"
             );

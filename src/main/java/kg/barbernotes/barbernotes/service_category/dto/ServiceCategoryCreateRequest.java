@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.service_category;
+package kg.barbernotes.barbernotes.service_category.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceCategoryUpdateRequest {
+public class ServiceCategoryCreateRequest{
 
     @NotBlank(message = "Название категории не может быть пустым")
     private String name;
