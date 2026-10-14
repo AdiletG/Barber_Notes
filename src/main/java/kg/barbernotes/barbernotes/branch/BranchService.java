@@ -32,7 +32,7 @@ public class BranchService {
         BranchEntity branch = getById(id);
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if(!currentUser.subjectId().equals(branch.getId())){
+        if(!currentUser.belongsToBranch(branch.getId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Администратор филиала может изменять данные только своего филиала"
@@ -85,14 +85,6 @@ public class BranchService {
         }else if(branch.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE){
             branch.setStatus(request.getStatus());
             branchRepository.save(branch);
-        }
-
-        else if(branch.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE){
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Статус филиала уже НЕАКТИВНЫЙ"
-            );
-
         }else {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,

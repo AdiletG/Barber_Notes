@@ -21,6 +21,8 @@ public class TelegramContactHandler {
     public void checkCustomer(String phoneNumber, Long chatId){
 
         try {
+
+
             CustomerEntity customerEntity = customerService.getByPhoneNumber(phoneNumber);
 
             sendHandler.sendMessage(chatId,

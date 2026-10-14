@@ -87,7 +87,16 @@ public class WorkShiftService {
         checkWorkShift(branch, request);
 
         workShiftMapper.updateEntity(request, workShift);
-        workShiftRepository.save(workShift);
+
+        try {
+            workShiftRepository.save(workShift);
+
+        }catch (DataIntegrityViolationException e){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.SHIFT_ALREADY_EXISTS,
+                    "Не удалось обновить график"
+            );
+        }
         return workShiftMapper.toResponse(workShift);
     }
 
@@ -100,7 +109,16 @@ public class WorkShiftService {
 
         checkWorkShift(branch,  request);
 
+
+
         WorkShiftEntity workShift = workShiftMapper.toEntity(request);
+        if(workShift.getStartTime().isBefore(workShift.getStartTime())) {
+            throw new BusinessRuleViolationException(
+              ErrorCode.BUSINESS_RULE_VIOLATION,
+              "Время начало смены должно быть до его окончания"
+            );
+        }
+
         workShift.setBarberEntity(barber);
         try {
             workShiftRepository.save(workShift);
@@ -122,7 +140,8 @@ public class WorkShiftService {
                         "Графика по данному id не существует"
                 ));
 
-        BranchEntity branch = branchService.getById(workShift.getBarberEntity().getId());
+        BarberEntity barber = barberService.getById(workShift.getBarberEntity().getId());
+        BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
         checkCurrentUser(branch);
 
@@ -168,6 +187,14 @@ public class WorkShiftService {
 
     @Transactional(readOnly = true)
     public List<WorkShiftResponse> findByWorkDateBetween(UUID barberId, LocalDate dateFrom, LocalDate dateTo) {
+
+        if (dateFrom == null || dateTo == null) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Параметры dateFrom и dateTo должны передаваться вместе"
+            );
+        }
+
         return workShiftRepository.findByBarberEntity_IdAndWorkDateBetween(barberId, dateFrom, dateTo)
                 .stream()
                 .map(workShiftMapper::toResponse)
@@ -195,8 +222,8 @@ public class WorkShiftService {
     private void checkCurrentUser(BranchEntity branch) {
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if("BRANCH_ADMIN".equals(currentUser.role())){
-            if(!branch.getId().equals(currentUser.subjectId())){
+        if(currentUser.isBranchAdmin()){
+            if(!currentUser.belongsToBranch(branch.getId())){
                 throw new BusinessRuleViolationException(
                         ErrorCode.BUSINESS_RULE_VIOLATION,
                         "Данные барбере могут изменять только Администраторы филиала к которому привязан барбер"

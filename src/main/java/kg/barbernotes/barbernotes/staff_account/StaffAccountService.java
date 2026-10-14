@@ -219,6 +219,23 @@ public class StaffAccountService {
         repository.save(account);
     }
 
+
+    @Transactional(readOnly = true)
+    public StaffAccountEntity getByBranchId(UUID branchId) {
+        return repository.findByBranchEntity_Id(branchId) .orElseThrow(() -> new EntityNotFoundException(
+                ErrorCode.STAFF_NOT_FOUND,
+                "Сотрудник не найден"
+        ));
+    }
+
+    @Transactional(readOnly = true)
+    public StaffAccountEntity getByBarberId(UUID barberId) {
+        return repository.findByBarberEntity_Id(barberId) .orElseThrow(() -> new EntityNotFoundException(
+                ErrorCode.STAFF_NOT_FOUND,
+                "Сотрудник не найден"
+        ));
+    }
+
     @Transactional(readOnly = true)
     public StaffAccountEntity getById(UUID staffAccountId) {
         return repository.findById(staffAccountId)

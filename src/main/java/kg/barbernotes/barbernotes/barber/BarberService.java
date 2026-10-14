@@ -2,6 +2,7 @@ package kg.barbernotes.barbernotes.barber;
 
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
+import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.event.BarberServiceDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.event.BranchDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
@@ -10,6 +11,9 @@ import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationExcepti
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
 import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
+import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
+import kg.barbernotes.barbernotes.staff_account.StaffAccountEntity;
+import kg.barbernotes.barbernotes.staff_account.StaffAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -41,13 +45,6 @@ public class BarberService {
                 ));
 
         checkCurrentUser(barber);
-
-        if(request.getBranchId() != null && !branchService.existsById(request.getBranchId())){
-            throw new EntityNotFoundException(
-                    ErrorCode.BRANCH_NOT_FOUND,
-                    "Филиал с таким id отсутствуют"
-            );
-        }
 
         barberMapper.updateBarber(request,  barber);
         barberRepository.save(barber);
@@ -83,7 +80,11 @@ public class BarberService {
     public void deactivateAllByBranchId(BranchDeactivatedEvent event) {
         List<BarberEntity> barbers = barberRepository
                 .findByBranchEntity_IdAndStatus(event.getBranchId(),  Status.ACTIVE);
-        barbers.forEach(barber -> barber.setStatus(Status.INACTIVE));
+        for(BarberEntity barber : barbers) {
+            barber.setStatus(Status.INACTIVE);
+            eventPublisher.publishEvent(new BarberServiceDeactivatedEvent(barber.getId()));
+            barberRepository.save(barber);
+        }
     }
 
     @Transactional
@@ -100,20 +101,14 @@ public class BarberService {
         if(barber.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
             barber.setStatus(Status.INACTIVE);
             barberRepository.save(barber);
-
             eventPublisher.publishEvent(new BarberServiceDeactivatedEvent(id));
         } else if (barber.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
             barber.setStatus(Status.ACTIVE);
             barberRepository.save(barber);
-        } else if (barber.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Статус барбера уже НЕАКТИВНЫЙ"
-            );
         }else {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Статус барбера уже АКТИВНЫЙ"
+                    "Барбер уже имеет запрошенный статус"
             );
         }
 
@@ -180,8 +175,8 @@ public class BarberService {
     private void checkCurrentUser(BarberEntity barber) {
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if("BRANCH_ADMIN".equals(currentUser.role()) &&
-                !barber.getBranchEntity().getId().equals(currentUser.subjectId())
+        if(currentUser.isBranchAdmin() &&
+                !currentUser.belongsToBranch(barber.getBranchEntity().getId())
         ) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,

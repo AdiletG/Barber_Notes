@@ -87,9 +87,9 @@ public class AppointmentBookingService {
     ){
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if("BARBER".equals(currentUser.role())){
+        if(currentUser.isBarber()){
             barberId = currentUser.barberId();
-        } else if ("BRANCH_ADMIN".equals(currentUser.role())) {
+        } else if (currentUser.isBranchAdmin()) {
             branchId = currentUser.branchId();
         }
 
@@ -101,11 +101,11 @@ public class AppointmentBookingService {
     private void checkCurrentUser(AppointmentEntity appointment) {
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if("BARBER".equals(currentUser.role()) &&
-                !appointment.getBarberEntity().getId().equals(currentUser.barberId())){
+        if(currentUser.isBarber() &&
+                !currentUser.belongsToBarber(appointment.getBarberEntity().getId())){
             throw new AccessDeniedException("Барбер может просматривать только свои записи");
-        } else if ("BRANCH_ADMIN".equals(currentUser.role()) &&
-                !appointment.getBranchEntity().getId().equals(currentUser.branchId())) {
+        } else if (currentUser.isBranchAdmin() &&
+                !currentUser.belongsToBranch(appointment.getBranchEntity().getId())) {
             throw new AccessDeniedException("Администратор может просматривать только записи своего филиала");
         }
     }

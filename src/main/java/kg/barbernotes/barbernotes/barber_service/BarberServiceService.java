@@ -32,6 +32,9 @@ public class BarberServiceService {
 
     @Transactional
     public BarberServiceResponse create(UUID barberId, AddBarberServiceRequest request){
+
+        checkCurrentUser(barberId);
+
         BarberEntity barber = barberService.getById(barberId);
         ServiceEntity service = serviceService.getById(request.getServiceId());
 
@@ -143,8 +146,8 @@ public class BarberServiceService {
 
         BarberEntity barber = barberService.getById(barberID);
 
-        if("BRANCH_ADMIN".equals(currentUser.role())){
-            if(!barber.getBranchEntity().getId().equals(currentUser.subjectId())){
+        if(currentUser.isBranchAdmin()){
+            if(!currentUser.belongsToBranch(barber.getBranchEntity().getId())){
                 throw new BusinessRuleViolationException(
                         ErrorCode.BUSINESS_RULE_VIOLATION,
                         "Сервисы барбера могут изменять только Администраторы филиала к которому привязан барбер"

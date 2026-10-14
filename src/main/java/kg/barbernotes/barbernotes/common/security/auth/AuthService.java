@@ -136,18 +136,18 @@ public class AuthService {
     public AuthResult staffLogin(String phoneNumber, String rawPassword){
         StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(phoneNumber);
 
-        if(staffAccount.getStatus() != Status.ACTIVE){
-            throw new CustomAuthenticationException(
-                    ErrorCode.INVALID_CREDENTIALS,
-                    "Неверный телефон или пароль"
-            );
-        }
-
         if(staffAccount.getLockedUntil() != null &&
                 staffAccount.getLockedUntil().isAfter(OffsetDateTime.now(ZoneOffset.UTC))){
             throw new CustomAuthenticationException(
                     ErrorCode.ACCOUNT_IS_TEMPORARILY_BLOCKED,
                     "Аккаунт временно заблокирован, попробуйте позже"
+            );
+        }
+
+        if(staffAccount.getStatus() != Status.ACTIVE){
+            throw new CustomAuthenticationException(
+                    ErrorCode.INVALID_CREDENTIALS,
+                    "Неверный телефон или пароль"
             );
         }
 

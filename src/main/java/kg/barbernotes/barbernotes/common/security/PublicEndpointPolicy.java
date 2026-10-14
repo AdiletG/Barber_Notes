@@ -14,7 +14,6 @@ public class PublicEndpointPolicy {
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
     private final List<EndpointRule> rules = List.of(
-            new EndpointRule(null, "/api/v1/auth/customer/otp/request"),
             new EndpointRule(null, "/api/v1/auth/customer/otp/verify"),
             new EndpointRule(null, "/api/v1/auth/staff-login"),
             new EndpointRule(null, "/api/v1/auth/refresh"),

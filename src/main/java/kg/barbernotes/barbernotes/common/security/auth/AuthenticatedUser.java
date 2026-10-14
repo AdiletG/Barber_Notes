@@ -26,6 +26,9 @@ public record AuthenticatedUser(
     public boolean isBarber(){
         return  role == UserRole.BARBER;
     }
+    public boolean belongsToBarber(UUID id) {
+        return id.equals(barberId);
+    }
     public boolean isCustomer(){
         return  role == UserRole.CUSTOMER;
     }

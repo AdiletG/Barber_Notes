@@ -38,11 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver resolver;
     private final PublicEndpointPolicy endpointPolicy;
 
-//
-//    private static final Set<String> PUBLIC = Set.of(
-//            "/api/v1/auth/refresh", "/api/v1/auth/logout", "/api/v1/auth/staff-login",
-//            "/api/v1/auth/customer/otp/request", "/api/v1/auth/customer/otp/verify");
-
     private static final String CHANGE_PASSWORD_PATH = "/api/v1/auth/change-password";
 
     public JwtAuthenticationFilter(

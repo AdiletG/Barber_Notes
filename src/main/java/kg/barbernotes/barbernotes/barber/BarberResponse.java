@@ -18,7 +18,6 @@ public class BarberResponse {
     private UUID branchId;
     private String firstName;
     private String lastName;
-    private String phoneNumber;
     private Integer experienceYears;
     private Status status;
 }

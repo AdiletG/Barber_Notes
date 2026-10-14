@@ -1,6 +1,8 @@
 package kg.barbernotes.barbernotes.work_shift;
 
 import jakarta.validation.Valid;
+import kg.barbernotes.barbernotes.common.enums.ErrorCode;
+import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftRequest;
 import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,14 +21,16 @@ public class WorkShiftController {
     @GetMapping("/api/v1/barbers/{barberId}/shifts")
     public List<WorkShiftResponse> getWorkShifts(
             @PathVariable UUID barberId,
-            @RequestParam LocalDate dateFrom,
-            @RequestParam LocalDate dateTo
-            ){
-        if(dateFrom == null && dateTo == null){
+            @RequestParam(required = false) LocalDate dateFrom,
+            @RequestParam(required = false) LocalDate dateTo
+    ) {
+        if (dateFrom == null && dateTo == null) {
             return workShiftService.findByWorkShift(barberId);
-        }else {
-            return workShiftService.findByWorkDateBetween(barberId, dateFrom, dateTo);
         }
+
+        return workShiftService.findByWorkDateBetween(
+                barberId, dateFrom, dateTo
+        );
     }
 
     @PostMapping("/api/v1/barbers/{barberId}/shifts")

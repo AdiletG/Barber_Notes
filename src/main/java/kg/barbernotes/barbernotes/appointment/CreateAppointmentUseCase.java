@@ -10,6 +10,7 @@ import kg.barbernotes.barbernotes.barber_service.BarberServiceService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
+import kg.barbernotes.barbernotes.common.enums.Source;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.ScheduleConflictException;
@@ -45,6 +46,8 @@ public class CreateAppointmentUseCase {
     private final AppointmentServiceRepository  appointmentServiceRepository;
     private final WorkShiftService  workShiftService;
     private final BarberServiceService barberServiceService;
+
+    public final int BREAK_MINUTES = 15;
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
@@ -94,7 +97,8 @@ public class CreateAppointmentUseCase {
         }
 
         List<ServiceEntity> serviceEntities = new ArrayList<>();
-        int totalDurationMinutes = 15;
+
+        int totalDurationMinutes = BREAK_MINUTES;
         BigDecimal totalPrice = BigDecimal.ZERO;
 
 
@@ -118,7 +122,7 @@ public class CreateAppointmentUseCase {
                 );
             }
 
-            if(serviceEntity.getId() == serviceId){
+            if(serviceEntity.getId().equals(serviceId)){
                 throw new BusinessRuleViolationException(
                         ErrorCode.BUSINESS_RULE_VIOLATION,
                         "Услуга уже выбрана"
@@ -178,10 +182,10 @@ public class CreateAppointmentUseCase {
         appointmentEntity.setTotalPrice(totalPrice);
         appointmentEntity.setTotalDurationMinutes(totalDurationMinutes);
         appointmentEntity.setStatus(AppointmentStatus.CONFIRMED);
-        appointmentEntity.setSource(request.getSource());
+        appointmentEntity.setSource(Source.ONLINE);
 
         try {
-            appointmentRepository.save(appointmentEntity);
+            appointmentRepository.saveAndFlush(appointmentEntity);
         }catch (DataIntegrityViolationException e) {
             throw new ScheduleConflictException(
                     ErrorCode.SCHEDULE_CONFLICT,
