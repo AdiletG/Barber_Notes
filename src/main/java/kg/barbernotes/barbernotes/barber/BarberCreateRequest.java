@@ -25,7 +25,6 @@ public class BarberCreateRequest {
     @Size(max = 100)
     private String lastName;
 
-
     @NotBlank(message = "Номер телефона сотрудника обязателен")
     @Pattern(regexp = "\\d{10,15}")
     private String phoneNumber;

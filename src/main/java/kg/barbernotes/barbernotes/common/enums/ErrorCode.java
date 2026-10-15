@@ -58,6 +58,7 @@ public enum ErrorCode {
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR),
+    TELEGRAM_API_ERROR("TELEGRAM_API_ERROR", HttpStatus.INTERNAL_SERVER_ERROR),
 
 
     // Unprocessable Entity

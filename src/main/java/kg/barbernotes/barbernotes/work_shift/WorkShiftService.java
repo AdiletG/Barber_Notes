@@ -73,6 +73,7 @@ public class WorkShiftService {
 
     @Transactional
     public WorkShiftResponse update(UUID workShiftId, WorkShiftRequest request) {
+        try {
         WorkShiftEntity workShift = workShiftRepository.findById(workShiftId)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.WORK_SHIFT_NOT_FOUND,
@@ -88,8 +89,10 @@ public class WorkShiftService {
 
         workShiftMapper.updateEntity(request, workShift);
 
-        try {
-            workShiftRepository.save(workShift);
+
+            workShiftRepository.saveAndFlush(workShift);
+
+            return workShiftMapper.toResponse(workShift);
 
         }catch (DataIntegrityViolationException e){
             throw new BusinessRuleViolationException(
@@ -97,11 +100,11 @@ public class WorkShiftService {
                     "Не удалось обновить график"
             );
         }
-        return workShiftMapper.toResponse(workShift);
     }
 
     @Transactional
     public WorkShiftResponse create(UUID barberId, WorkShiftRequest request){
+        try {
         BarberEntity barber = barberService.getById(barberId);
         BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
@@ -112,24 +115,17 @@ public class WorkShiftService {
 
 
         WorkShiftEntity workShift = workShiftMapper.toEntity(request);
-        if(workShift.getStartTime().isBefore(workShift.getStartTime())) {
-            throw new BusinessRuleViolationException(
-              ErrorCode.BUSINESS_RULE_VIOLATION,
-              "Время начало смены должно быть до его окончания"
-            );
-        }
 
         workShift.setBarberEntity(barber);
-        try {
-            workShiftRepository.save(workShift);
 
+            workShiftRepository.saveAndFlush(workShift);
+            return workShiftMapper.toResponse(workShift);
         }catch (DataIntegrityViolationException e){
             throw new BusinessRuleViolationException(
                     ErrorCode.SHIFT_ALREADY_EXISTS,
                     "Не удалось создать график так как график уже существует"
             );
         }
-        return workShiftMapper.toResponse(workShift);
     }
 
     @Transactional
@@ -202,6 +198,13 @@ public class WorkShiftService {
     }
 
     private void checkWorkShift(BranchEntity branch, WorkShiftRequest request){
+
+        if(!request.getStartTime().isBefore(request.getEndTime())) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Время начало смены должно быть до его окончания"
+            );
+        }
 
         if(request.getWorkDate().isBefore(LocalDate.now())) {
             throw new BusinessRuleViolationException(

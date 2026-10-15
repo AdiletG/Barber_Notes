@@ -9,6 +9,7 @@ import kg.barbernotes.barbernotes.barber_service.BarberServiceEntity;
 import kg.barbernotes.barbernotes.barber_service.BarberServiceService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.config.TimeConfig;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Source;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -26,12 +27,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -46,8 +46,9 @@ public class CreateAppointmentUseCase {
     private final AppointmentServiceRepository  appointmentServiceRepository;
     private final WorkShiftService  workShiftService;
     private final BarberServiceService barberServiceService;
+    private final Clock clock;
 
-    public final int BREAK_MINUTES = 15;
+    private static final int BREAK_MINUTES = 15;
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
@@ -57,6 +58,13 @@ public class CreateAppointmentUseCase {
         CustomerEntity customer;
         if(customerEntity.isPresent()) {
             customer = customerEntity.get();
+
+            if(customer.getStatus() != Status.ACTIVE) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Статус клиента неактивен либо заблокирован "
+                        );
+            }
 
         }else {
             if(request.getCustomerName() == null || request.getCustomerName().isEmpty()) {
@@ -69,7 +77,7 @@ public class CreateAppointmentUseCase {
             customer = new CustomerEntity();
             customer.setFirstName(request.getCustomerName());
             customer.setPhoneNumber(request.getCustomerPhoneNumber());
-            customer.setCreatedFrom(request.getSource());
+            customer.setCreatedFrom(Source.ONLINE);
             customer.setStatus(Status.ACTIVE);
             customerRepository.save(customer);
         }
@@ -101,8 +109,17 @@ public class CreateAppointmentUseCase {
         int totalDurationMinutes = BREAK_MINUTES;
         BigDecimal totalPrice = BigDecimal.ZERO;
 
+        Set<UUID> seen = new HashSet<>();
 
         for (UUID serviceId : request.getServiceIds()) {
+
+            if(!seen.add(serviceId)){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Услуга уже выбрана"
+                );
+            }
+
             ServiceEntity serviceEntity = serviceService.getById(serviceId);
 
             if(serviceEntity.getStatus() != Status.ACTIVE) {
@@ -119,13 +136,6 @@ public class CreateAppointmentUseCase {
                 throw new BusinessRuleViolationException(
                         ErrorCode.BUSINESS_RULE_VIOLATION,
                         "Статус сервиса у барбера НЕАКТИВЕН"
-                );
-            }
-
-            if(serviceEntity.getId().equals(serviceId)){
-                throw new BusinessRuleViolationException(
-                        ErrorCode.BUSINESS_RULE_VIOLATION,
-                        "Услуга уже выбрана"
                 );
             }
 
@@ -165,8 +175,14 @@ public class CreateAppointmentUseCase {
             );
         }
 
-        if(request.getAppointmentDate().isBefore(LocalDate.now()) &&
-                request.getStartTime().isBefore(LocalTime.now())){
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                request.getAppointmentDate(),
+                request.getStartTime()
+        );
+
+        LocalDateTime now = LocalDateTime.now(clock);
+
+        if(appointmentDateTime.isBefore(now)){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Время записи не может быть в прошлом"

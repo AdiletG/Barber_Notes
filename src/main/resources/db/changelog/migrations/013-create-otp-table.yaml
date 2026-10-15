@@ -49,3 +49,12 @@ databaseChangeLog:
             referencedColumnNames: id
             onDelete: RESTRICT
 
+        - createIndex:
+            tableName: otp
+            indexName: idx_customer_id_created_at_otp
+            unique: false
+            columns:
+              - column:
+                  name: customer_id
+              - column:
+                  name: created_at

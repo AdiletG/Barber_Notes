@@ -32,7 +32,8 @@ public class BranchService {
         BranchEntity branch = getById(id);
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if(!currentUser.belongsToBranch(branch.getId())){
+        if(currentUser.isBranchAdmin() &&
+                !currentUser.belongsToBranch(branch.getId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Администратор филиала может изменять данные только своего филиала"

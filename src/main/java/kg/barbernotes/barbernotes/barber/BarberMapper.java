@@ -11,6 +11,8 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 )
 public interface BarberMapper {
 
+    @Mapping(target = "branchEntity", ignore = true)
+    @Mapping(target = "status", ignore = true)
     BarberEntity toEntity(BarberCreateRequest request);
 
     @Mapping(target = "branchId", source = "branchEntity.id")

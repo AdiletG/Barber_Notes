@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,11 +23,15 @@ public class OtpService {
     private final PasswordEncoder passwordEncoder;
     private final CustomerService customerService;
     private final PasswordGenerator passwordGenerator;
+    private final Clock clock;
 
 
-    @Transactional
+    private static final int MAX_ATTEMPTS = 5;
+
+    @Transactional(noRollbackFor = CustomAuthenticationException.class)
     public void verify(UUID customerId, String rawCode){
         Optional<OtpEntity> oldOtp = otpRepository.findFirstByCustomerEntity_IdOrderByCreatedAtDesc(customerId);
+        OffsetDateTime now = OffsetDateTime.now(clock);
 
         if(oldOtp.isEmpty()) {
             throw new BusinessRuleViolationException(
@@ -37,47 +42,54 @@ public class OtpService {
 
         OtpEntity lastOtp = oldOtp.get();
 
-        if(lastOtp.getConsumedAt() != null){
-            throw new BusinessRuleViolationException(
-                    ErrorCode.OTP_NOT_FOUND,
-                    "Такого кода не существует"
-            );
-        }
+        int reserveAttempt = otpRepository.reserveAttempt(
+                lastOtp.getId(), now, MAX_ATTEMPTS);
 
-        if(lastOtp.getExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.OTP_EXPIRED,
-                    "Время жизни кода истекло, попробуйте получить новый код"
-            );
-        }
+        if(reserveAttempt == 0){
+            if(lastOtp.getConsumedAt() != null){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.OTP_NOT_FOUND,
+                        "Такого кода не существует"
+                );
+            }
 
-        if(lastOtp.getAttempts() >= 5){
+            if(lastOtp.getExpiresAt().isBefore(now)) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.OTP_EXPIRED,
+                        "Время жизни кода истекло, попробуйте получить новый код"
+                );
+            }
+
             throw new BusinessRuleViolationException(
                     ErrorCode.OTP_ATTEMPTS_EXCEEDED,
-                    "Исчерпан лимит по попыткам"
-            );
+                    "Исчерпан лимит по попыткам");
         }
 
-        if(passwordEncoder.matches(rawCode, lastOtp.getCodeHash())){
-            lastOtp.setConsumedAt(OffsetDateTime.now());
-            otpRepository.save(lastOtp);
-        }else {
-            lastOtp.setAttempts(lastOtp.getAttempts() + 1);
-            otpRepository.save(lastOtp);
+
+
+        if(passwordEncoder.matches(rawCode, lastOtp.getCodeHash())) {
+            int consumed = otpRepository.consumeIfActive(lastOtp.getId(), now);
+            if (consumed == 0) {
+                throw new BusinessRuleViolationException(ErrorCode.OTP_NOT_FOUND, "Такого кода не существует");
+            }
+            return;
+        }
+
             throw new CustomAuthenticationException(
                     ErrorCode.INVALID_OTP,
                     "Неверный код, попробуйте еще раз"
             );
-        }
     }
 
     @Transactional
     public String issueFor(UUID customerId) {
         Optional<OtpEntity> oldOtp = otpRepository.findFirstByCustomerEntity_IdOrderByCreatedAtDesc(customerId);
 
+        OffsetDateTime now = OffsetDateTime.now(clock);
+
         if(oldOtp.isPresent()) {
             OtpEntity lastOtp = oldOtp.get();
-            if(lastOtp.getConsumedAt() == null && lastOtp.getExpiresAt().isAfter(OffsetDateTime.now())) {
+            if(lastOtp.getConsumedAt() == null && lastOtp.getExpiresAt().isAfter(now)) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.OTP_COOLDOWN_ACTIVE,
                         "код уже отправлен, попробуйте чуть позже"
@@ -96,7 +108,7 @@ public class OtpService {
         OtpEntity newOtp = new OtpEntity();
         newOtp.setCustomerEntity(customerEntity);
         newOtp.setCodeHash(hash);
-        newOtp.setExpiresAt(OffsetDateTime.now().plusMinutes(5));
+        newOtp.setExpiresAt(now.plusMinutes(5));
         newOtp.setAttempts(0);
 
         otpRepository.save(newOtp);

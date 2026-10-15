@@ -41,7 +41,4 @@ public class AppointmentCreateRequest {
     @NotEmpty(message = "Услуга обязательна")
     private List<UUID> serviceIds;
 
-    @NotNull()
-    private Source source;
-
 }

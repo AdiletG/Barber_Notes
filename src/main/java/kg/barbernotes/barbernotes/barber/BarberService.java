@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.barber;
 
+import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.SubjectType;
@@ -54,7 +55,6 @@ public class BarberService {
     @Transactional
     public BarberResponse create(BarberCreateRequest request){
 
-
         if(barberRepository.existsByPhoneNumber(
                 request.getPhoneNumber())) {
             throw new BusinessRuleViolationException(
@@ -63,14 +63,12 @@ public class BarberService {
             );
         }
 
-        if(!branchService.existsById(request.getBranchId())){
-            throw new EntityNotFoundException(
-                    ErrorCode.BRANCH_NOT_FOUND,
-                    "Филиал с таким id отсутствуют"
-            );
-        }
-
+        BranchEntity branch = branchService.getById(request.getBranchId());
         BarberEntity barber = barberMapper.toEntity(request);
+        barber.setBranchEntity(branch);
+        barber.setStatus(Status.ACTIVE);
+        checkCurrentUser(barber);
+
         barberRepository.save(barber);
         return barberMapper.toResponse(barber);
     }

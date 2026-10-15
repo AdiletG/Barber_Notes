@@ -1,5 +1,7 @@
 package kg.barbernotes.barbernotes.telegram.handlers;
 
+import kg.barbernotes.barbernotes.common.enums.ErrorCode;
+import kg.barbernotes.barbernotes.common.exceptions.TelegramSendException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -23,7 +25,10 @@ public class TelegramSendHandler{
         try {
             client.execute(SendMessage.builder().chatId(chatId).text(text).build());
         } catch (TelegramApiException e) {
-            throw new RuntimeException("Ошибка при отправке сообщения", e);
+            throw new TelegramSendException(
+                    ErrorCode.TELEGRAM_API_ERROR,
+                    "Ошибка при отправке сообщения"
+            );
         }
     }
 
@@ -36,7 +41,10 @@ public class TelegramSendHandler{
                     .replyMarkup(keyboard)
                     .build());
         } catch (TelegramApiException e) {
-            throw new RuntimeException("Ошибка при отправке клавиатуры", e);
+            throw new TelegramSendException(
+                    ErrorCode.TELEGRAM_API_ERROR,
+                    "Ошибка при отправке клавиатуры"
+            );
         }
     }
 
@@ -50,7 +58,10 @@ public class TelegramSendHandler{
                     .replyMarkup(keyboard)
                     .build());
         } catch (TelegramApiException e) {
-            throw new RuntimeException("Ошибка при отправке клавиатуры с запросом контакта", e);
+            throw new TelegramSendException(
+                    ErrorCode.TELEGRAM_API_ERROR,
+                    "Ошибка при отправке клавиатуры с запросом контакта"
+            );
         }
     }
 
@@ -63,7 +74,10 @@ public class TelegramSendHandler{
                     .replyMarkup(remove)
                     .build());
         } catch (TelegramApiException e) {
-            throw new RuntimeException("Не удалось убрать клавиатуру", e);
+            throw new TelegramSendException(
+                    ErrorCode.TELEGRAM_API_ERROR,
+                    "Ошибка при удалении клавиатуры"
+            );
         }
     }
 

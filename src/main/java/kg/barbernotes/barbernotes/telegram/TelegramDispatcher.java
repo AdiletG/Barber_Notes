@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.telegram;
 
+import kg.barbernotes.barbernotes.common.exceptions.BaseException;
 import kg.barbernotes.barbernotes.telegram.handlers.TelegramContactHandler;
 import kg.barbernotes.barbernotes.telegram.handlers.TelegramSendHandler;
 import lombok.RequiredArgsConstructor;
@@ -18,24 +19,50 @@ public class TelegramDispatcher {
     private final TelegramContactHandler contactHandler;
 
     public void route(Update update){
-        if (update ==  null) return;
+        try {
+            if (update == null || !update.hasMessage() || update.getMessage() == null) return;
 
-        if (!update.hasMessage() || update.getMessage() == null) return;
+            var message = update.getMessage();
+            var chat = message.getChat();
+            Long chatId = message.getChatId();
 
-        var message = update.getMessage();
-        Long chatId = message.getChatId();
+
+            if (message.hasContact()) {
+                var contact = message.getContact();
+
+                if (chat == null || !chat.isUserChat()) {
+                    sendHandler.sendMessage(
+                            chatId,
+                            "Отправка контакта доступна только в личном чате с ботом."
+                    );
+                    return;
+                }
+
+                Long contactUserId = contact.getUserId();
+                Long senderUserId = message.getFrom() != null
+                        ? message.getFrom().getId()
+                        : null;
+
+                if (contactUserId == null
+                        || senderUserId == null
+                        || !contactUserId.equals(senderUserId)) {
+                    sendHandler.sendMessage(
+                            chatId,
+                            "Пожалуйста, отправьте свой контакт через кнопку ниже."
+                    );
+                    return;
+                }
 
 
-            if(message.hasContact()){
-                contactHandler.checkCustomer(message.getContact().getPhoneNumber(), chatId);
-               return;
+                contactHandler.checkCustomer(contact.getPhoneNumber(), chatId);
+                return;
             }
 
-            if(message.hasText()){
+            if (message.hasText()) {
 
                 String text = message.getText().trim();
 
-                switch (text){
+                switch (text) {
                     case "/start" -> {
 
                         sendHandler.sendMessage(update.getMessage().getChatId(),
@@ -54,7 +81,8 @@ public class TelegramDispatcher {
 
                     }
 
-                    case  "/stop" -> {}
+                    case "/stop" -> {
+                    }
 
                     default -> {
                         sendHandler.sendMessage(update.getMessage().getChatId(),
@@ -67,12 +95,16 @@ public class TelegramDispatcher {
                 return;
             }
 
-        sendHandler.sendMessage(update.getMessage().getChatId(),
-                "Не понятная команда для бота");
+            sendHandler.sendMessage(update.getMessage().getChatId(),
+                    "Не понятная команда для бота");
 
-        sendHandler.sendKeyboard(chatId, "Просьба выбрать команду из списка ниже", menu());
+            sendHandler.sendKeyboard(chatId, "Просьба выбрать команду из списка ниже", menu());
 
-
+        }catch (BaseException e){
+            sendHandler.sendMessage(
+                    update.getMessage().getChatId(),
+                    "Ошибка отправки просьба повторить позже");
+        }
     }
 
     private List<List<String>> menu(){
