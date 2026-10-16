@@ -53,7 +53,7 @@ public class TelegramDispatcher {
                     return;
                 }
 
-                String phoneNumber = PhoneNormalizer.normalizer(contact.getPhoneNumber());
+                String phoneNumber = PhoneNormalizer.normalize(contact.getPhoneNumber());
 
                 contactHandler.checkCustomer(phoneNumber, chatId);
                 return;

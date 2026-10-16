@@ -40,7 +40,7 @@ public class AuthService {
 
 
     public AuthResult customerOtpLogin(String phoneNumber, String rawCode) {
-        String customerPhoneNumber = PhoneNormalizer.normalizer(phoneNumber);
+        String customerPhoneNumber = PhoneNormalizer.normalize(phoneNumber);
         CustomerEntity customer = customerService.getByPhoneNumber(customerPhoneNumber);
 
         if(customer.getStatus() != Status.ACTIVE) {
@@ -61,7 +61,8 @@ public class AuthService {
     }
 
     public String requestCustomerOtp(String phoneNumber){
-            CustomerEntity customerEntity = customerService.getByPhoneNumber(phoneNumber);
+        String customerPhoneNumber = PhoneNormalizer.normalize(phoneNumber);
+        CustomerEntity customerEntity = customerService.getByPhoneNumber(customerPhoneNumber);
 
             if(customerEntity.getStatus() != Status.ACTIVE) {
                 throw new CustomAuthenticationException(
@@ -136,7 +137,7 @@ public class AuthService {
     }
 
     public AuthResult staffLogin(String phoneNumber, String rawPassword){
-        String staffAccountPhoneNumber = PhoneNormalizer.normalizer(phoneNumber);
+        String staffAccountPhoneNumber = PhoneNormalizer.normalize(phoneNumber);
         StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(staffAccountPhoneNumber);
 
         if(staffAccount.getLockedUntil() != null &&

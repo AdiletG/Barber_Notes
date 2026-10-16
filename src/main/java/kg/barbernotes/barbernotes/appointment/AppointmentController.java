@@ -1,6 +1,9 @@
 package kg.barbernotes.barbernotes.appointment;
 
 import jakarta.validation.Valid;
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentCreateRequest;
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentResponse;
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentStatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

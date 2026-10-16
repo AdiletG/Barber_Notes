@@ -18,7 +18,7 @@ import java.util.UUID;
 public class StaffAccountCreateRequest {
 
     @NotBlank(message = "Номер телефона сотрудника обязателен")
-    @Pattern(regexp = "\\d{10,15}", message = "Номер телефона должен содержать от 10 до 15 цифр")
+    @Pattern(regexp = "\\d{10,12}", message = "Номер телефона должен содержать от 10 до 12 цифр")
     private String phoneNumber;
 
     private UUID barberId;

@@ -2,7 +2,7 @@ package kg.barbernotes.barbernotes.customer;
 
 import jakarta.validation.Valid;
 import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
-import kg.barbernotes.barbernotes.appointment.AppointmentResponse;
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentResponse;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
@@ -39,7 +39,7 @@ public class CustomerController {
             @RequestParam(required = false) Status status,
             @RequestParam(required = false) String phoneNumber) {
         String customerPhoneNumber = phoneNumber != null
-                ? PhoneNormalizer.normalizer(phoneNumber) : null;
+                ? PhoneNormalizer.normalize(phoneNumber) : null;
 
         if(status == null && customerPhoneNumber == null) {
             return PageResponse.of(customerService.findAll(pageable));

@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.barber;
+package kg.barbernotes.barbernotes.barber.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -6,12 +6,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BarberUpdateRequest {
+public class BarberCreateRequest {
+
+    @NotNull(message = "Филиал обязателен")
+    private UUID branchId;
 
     @NotBlank(message = "Имя сотрудника обязательна")
     @Size(max = 100)
@@ -21,13 +25,12 @@ public class BarberUpdateRequest {
     @Size(max = 100)
     private String lastName;
 
-
     @NotBlank(message = "Номер телефона сотрудника обязателен")
-    @Pattern(regexp = "\\d{10,15}")
+    @Pattern(regexp = "\\d{10,12}")
     private String phoneNumber;
 
     @NotNull(message = "Опыт работы сотрудника обязателен")
-    @PositiveOrZero(message = "Опыт работы не может отрицательным")
+    @PositiveOrZero
     private Integer experienceYears;
 
 }

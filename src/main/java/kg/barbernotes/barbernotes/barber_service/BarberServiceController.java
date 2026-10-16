@@ -1,6 +1,8 @@
 package kg.barbernotes.barbernotes.barber_service;
 
 import jakarta.validation.Valid;
+import kg.barbernotes.barbernotes.barber_service.dto.AddBarberServiceRequest;
+import kg.barbernotes.barbernotes.barber_service.dto.BarberServiceResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.RequiredArgsConstructor;

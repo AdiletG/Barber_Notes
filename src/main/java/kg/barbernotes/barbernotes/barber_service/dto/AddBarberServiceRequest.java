@@ -1,6 +1,6 @@
-package kg.barbernotes.barbernotes.barber_service;
+package kg.barbernotes.barbernotes.barber_service.dto;
 
-import kg.barbernotes.barbernotes.common.enums.Status;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,10 +12,8 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BarberServiceResponse {
+public class AddBarberServiceRequest {
 
-    private UUID id;
-    private UUID barberId;
+    @NotNull(message = "")
     private UUID serviceId;
-    private Status status;
 }

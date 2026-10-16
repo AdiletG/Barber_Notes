@@ -1,6 +1,9 @@
 package kg.barbernotes.barbernotes.barber;
 
 import jakarta.validation.Valid;
+import kg.barbernotes.barbernotes.barber.dto.BarberCreateRequest;
+import kg.barbernotes.barbernotes.barber.dto.BarberResponse;
+import kg.barbernotes.barbernotes.barber.dto.BarberUpdateRequest;
 import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.Status;

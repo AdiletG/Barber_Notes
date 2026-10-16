@@ -1,5 +1,8 @@
 package kg.barbernotes.barbernotes.branch;
 
+import kg.barbernotes.barbernotes.branch.dto.BranchCreateRequest;
+import kg.barbernotes.barbernotes.branch.dto.BranchResponse;
+import kg.barbernotes.barbernotes.branch.dto.BranchUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;

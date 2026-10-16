@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.barber_service;
 
+import kg.barbernotes.barbernotes.barber_service.dto.BarberServiceResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;

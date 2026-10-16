@@ -1,7 +1,6 @@
-package kg.barbernotes.barbernotes.appointment;
+package kg.barbernotes.barbernotes.appointment.dto;
 
 import jakarta.validation.constraints.*;
-import kg.barbernotes.barbernotes.common.enums.Source;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +18,7 @@ import java.util.UUID;
 public class AppointmentCreateRequest {
 
     @NotBlank(message = "")
-    @Pattern(regexp = "\\d{10,15}")
+    @Pattern(regexp = "\\d{10,12}")
     private String customerPhoneNumber;
 
     @NotBlank(message = "")

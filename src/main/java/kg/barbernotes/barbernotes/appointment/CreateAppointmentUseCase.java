@@ -1,5 +1,7 @@
 package kg.barbernotes.barbernotes.appointment;
 
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentCreateRequest;
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentResponse;
 import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceEntity;
 import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceMapper;
 import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceRepository;
@@ -51,7 +53,7 @@ public class CreateAppointmentUseCase {
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
-        String customerPhoneNumber = PhoneNormalizer.normalizer(request.getCustomerPhoneNumber());
+        String customerPhoneNumber = PhoneNormalizer.normalize(request.getCustomerPhoneNumber());
 
         Optional<CustomerEntity> customerEntity  = customerRepository
                 .findByPhoneNumber(customerPhoneNumber);

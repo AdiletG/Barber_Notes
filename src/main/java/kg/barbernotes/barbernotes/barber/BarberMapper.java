@@ -1,5 +1,8 @@
 package kg.barbernotes.barbernotes.barber;
 
+import kg.barbernotes.barbernotes.barber.dto.BarberCreateRequest;
+import kg.barbernotes.barbernotes.barber.dto.BarberResponse;
+import kg.barbernotes.barbernotes.barber.dto.BarberUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

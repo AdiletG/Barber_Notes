@@ -1,5 +1,7 @@
 package kg.barbernotes.barbernotes.appointment;
 
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentResponse;
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentStatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,6 +46,23 @@ public class AppointmentBookingService {
         }
 
         return appointmentMapper.toResponse(appointment);
+    }
+
+
+    @Transactional(readOnly = true)
+    public boolean hasUpcomingBranch(UUID branchId,
+                               AppointmentStatus status,
+                               LocalDate fromDate,
+                               LocalTime fromTime){
+        return  appointmentRepository.hasUpcomingBranch(branchId, status, fromDate, fromTime);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasUpcoming(UUID barberId,
+                               AppointmentStatus status,
+                               LocalDate fromDate,
+                               LocalTime fromTime){
+        return  appointmentRepository.hasUpcoming(barberId, status, fromDate, fromTime);
     }
 
     @Transactional(readOnly = true)

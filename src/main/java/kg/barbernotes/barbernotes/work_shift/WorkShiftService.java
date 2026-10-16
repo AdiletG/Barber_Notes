@@ -86,6 +86,18 @@ public class WorkShiftService {
 
         BarberEntity barber = barberService.getById(workShift.getBarberEntity().getId());
         BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
+        List<AppointmentEntity> appointments =
+                appointmentBookingService.getAppointmentByBarberIdAndDate(barber.getId(), workShift.getWorkDate());
+
+        for (AppointmentEntity appointment : appointments) {
+            if(workShift.getEndTime().isBefore(appointment.getStartTime())
+                    && appointment.getStatus() == AppointmentStatus.CONFIRMED) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Нельзя сокращать время смены если на в это время есть ПОДТВЕРЖДЕННАЯ запись"
+                );
+            }
+        }
 
             if(barber.getStatus() != Status.ACTIVE) {
                 throw new BusinessRuleViolationException(
@@ -99,7 +111,6 @@ public class WorkShiftService {
         checkWorkShift(branch, request);
 
         workShiftMapper.updateEntity(request, workShift);
-
 
             workShiftRepository.saveAndFlush(workShift);
 

@@ -1,4 +1,4 @@
-package kg.barbernotes.barbernotes.appointment_service;
+package kg.barbernotes.barbernotes.appointment_service.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

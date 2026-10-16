@@ -2,6 +2,9 @@ package kg.barbernotes.barbernotes.barber;
 
 import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
 import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
+import kg.barbernotes.barbernotes.barber.dto.BarberCreateRequest;
+import kg.barbernotes.barbernotes.barber.dto.BarberResponse;
+import kg.barbernotes.barbernotes.barber.dto.BarberUpdateRequest;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
@@ -13,10 +16,7 @@ import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationExcepti
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
 import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
-import kg.barbernotes.barbernotes.work_shift.WorkShiftEntity;
-import kg.barbernotes.barbernotes.work_shift.WorkShiftService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,7 +35,6 @@ public class BarberService {
     private final BarberRepository barberRepository;
     private final BarberMapper barberMapper;
     private final BranchService branchService;
-    private final ApplicationEventPublisher eventPublisher;
     private final CurrentUserProvider currentUserProvider;
     private final AppointmentBookingService appointmentBookingService;
     private final Clock clock;
@@ -49,8 +49,17 @@ public class BarberService {
                         "Барбер с таким id отсутствует"
                 ));
 
+        String barberPhoneNumber = PhoneNormalizer.normalize(request.getPhoneNumber());
+
+        if(barberRepository.existsByPhoneNumber(barberPhoneNumber)) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.PHONE_NUMBER_ALREADY_EXISTS,
+                    "Барбер с таким номером телефона уже существует"
+            );
+        }
+
         checkCurrentUser(barber);
-        barber.setPhoneNumber(PhoneNormalizer.normalizer(request.getPhoneNumber()));
+        barber.setPhoneNumber(barberPhoneNumber);
         barberMapper.updateBarber(request,  barber);
         barberRepository.save(barber);
         return barberMapper.toResponse(barber);
@@ -63,7 +72,7 @@ public class BarberService {
         barber.setBranchEntity(branch);
         checkCurrentUser(barber);
 
-        String barberPhoneNumber = PhoneNormalizer.normalizer(barber.getPhoneNumber());
+        String barberPhoneNumber = PhoneNormalizer.normalize(barber.getPhoneNumber());
         if(barberRepository.existsByPhoneNumber(
                 barberPhoneNumber)) {
             throw new BusinessRuleViolationException(
@@ -103,16 +112,15 @@ public class BarberService {
 
         if(barber.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
 
-
-                if((shift.getWorkDate().isAfter(LocalDate.now(clock))) &&
-                        (appointmentBookingService.existsByBarberEntity_IdAndAppointmentDateAndStatus(
-                                barber.getId(), shift.getWorkDate(), AppointmentStatus.CONFIRMED))
-                ){
-                        throw new BusinessRuleViolationException(
-                                ErrorCode.SHIFT_HAS_APPOINTMENTS,
-                                "График на эту дату нельзя удалить так как есть сформированная запись"
-                        );
-                }
+            if(appointmentBookingService.hasUpcoming(
+                    barber.getId(), AppointmentStatus.CONFIRMED,
+                    LocalDate.now(clock), LocalTime.now(clock))
+            ){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BARBER_HAS_FUTURE_APPOINTMENTS,
+                        "Барбера нельзя ДЕАКТИВИРОВАТЬ так как есть сформированные записи"
+                );
+            }
 
             barber.setStatus(Status.INACTIVE);
             barberRepository.save(barber);

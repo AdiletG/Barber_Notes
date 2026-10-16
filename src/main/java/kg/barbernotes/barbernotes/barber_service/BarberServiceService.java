@@ -2,6 +2,8 @@ package kg.barbernotes.barbernotes.barber_service;
 
 import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.barber.BarberService;
+import kg.barbernotes.barbernotes.barber_service.dto.AddBarberServiceRequest;
+import kg.barbernotes.barbernotes.barber_service.dto.BarberServiceResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;

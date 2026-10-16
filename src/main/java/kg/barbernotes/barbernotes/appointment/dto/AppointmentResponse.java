@@ -1,5 +1,6 @@
-package kg.barbernotes.barbernotes.appointment;
+package kg.barbernotes.barbernotes.appointment.dto;
 
+import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
 import kg.barbernotes.barbernotes.common.enums.Source;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

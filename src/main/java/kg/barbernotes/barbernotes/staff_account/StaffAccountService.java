@@ -91,7 +91,7 @@ public class StaffAccountService {
     public StaffAccountCreateResponse create(StaffAccountCreateRequest request) {
 
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
-        String staffAccountPhoneNumber = PhoneNormalizer.normalizer(request.getPhoneNumber());
+        String staffAccountPhoneNumber = PhoneNormalizer.normalize(request.getPhoneNumber());
 
         if(currentUser.isBranchAdmin() &&
                 (request.getRole().equals(StaffRole.BRANCH_ADMIN) || request.getRole().equals(StaffRole.SUPER_ADMIN)))

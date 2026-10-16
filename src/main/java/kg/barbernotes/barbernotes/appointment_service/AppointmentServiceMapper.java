@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.appointment_service;
 
+import kg.barbernotes.barbernotes.appointment_service.dto.AppointmentServiceResponse;
 import kg.barbernotes.barbernotes.service.ServiceEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

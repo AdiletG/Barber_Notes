@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.appointment_service;
 
+import kg.barbernotes.barbernotes.appointment_service.dto.AppointmentServiceResponse;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import lombok.RequiredArgsConstructor;

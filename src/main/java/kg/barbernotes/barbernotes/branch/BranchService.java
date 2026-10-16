@@ -1,5 +1,10 @@
 package kg.barbernotes.barbernotes.branch;
 
+import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
+import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
+import kg.barbernotes.barbernotes.branch.dto.BranchCreateRequest;
+import kg.barbernotes.barbernotes.branch.dto.BranchResponse;
+import kg.barbernotes.barbernotes.branch.dto.BranchUpdateRequest;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.event.BranchDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
@@ -15,6 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Service
@@ -25,6 +33,8 @@ public class BranchService {
     private final BranchMapper branchMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final CurrentUserProvider currentUserProvider;
+    private final AppointmentBookingService appointmentBookingService;
+    private final Clock clock;
 
 
     @Transactional
@@ -78,9 +88,19 @@ public class BranchService {
                 ));
 
         if(branch.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE){
+
+            if(appointmentBookingService.hasUpcomingBranch(
+                    branch.getId(), AppointmentStatus.CONFIRMED,
+                    LocalDate.now(clock), LocalTime.now(clock))
+            ){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BRANCH_HAS_FUTURE_APPOINTMENTS,
+                        "Филиал нельзя ДЕАКТИВИРОВАТЬ так как есть сформированные записи"
+                );
+            }
+
             branch.setStatus(request.getStatus());
             branchRepository.save(branch);
-
             eventPublisher.publishEvent(new BranchDeactivatedEvent(id));
 
         }else if(branch.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE){
