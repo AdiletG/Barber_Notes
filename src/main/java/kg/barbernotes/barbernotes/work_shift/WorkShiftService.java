@@ -96,21 +96,14 @@ public class WorkShiftService {
             LocalTime startTime = appointment.getStartTime();
             LocalTime end = startTime.plusMinutes(appointment.getTotalDurationMinutes());
 
-            if(request.getStartTime().isAfter(startTime) || request.getEndTime().isBefore(end)) {
+            if((request.getStartTime().isAfter(startTime) || request.getEndTime().isBefore(end))
+                    && appointment.getStatus() == AppointmentStatus.CONFIRMED) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.BUSINESS_RULE_VIOLATION,
                         "Нельзя сокращать время смены если в это время есть ПОДТВЕРЖДЕННАЯ запись"
                 );
             }
         }
-
-            if(barber.getStatus() != Status.ACTIVE) {
-                throw new BusinessRuleViolationException(
-                        ErrorCode.BUSINESS_RULE_VIOLATION,
-                        "Статус Барбера НЕАКТИВЕН"
-                );
-            }
-
 
 
         checkWorkShift(branch, request);
