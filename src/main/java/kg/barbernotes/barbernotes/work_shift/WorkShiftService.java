@@ -86,15 +86,20 @@ public class WorkShiftService {
 
         BarberEntity barber = barberService.getById(workShift.getBarberEntity().getId());
         BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
+
+            checkCurrentUser(branch);
+
         List<AppointmentEntity> appointments =
                 appointmentBookingService.getAppointmentByBarberIdAndDate(barber.getId(), workShift.getWorkDate());
 
         for (AppointmentEntity appointment : appointments) {
-            if(workShift.getEndTime().isBefore(appointment.getStartTime())
-                    && appointment.getStatus() == AppointmentStatus.CONFIRMED) {
+            LocalTime startTime = appointment.getStartTime();
+            LocalTime end = startTime.plusMinutes(appointment.getTotalDurationMinutes());
+
+            if(request.getStartTime().isAfter(startTime) || request.getEndTime().isBefore(end)) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.BUSINESS_RULE_VIOLATION,
-                        "Нельзя сокращать время смены если на в это время есть ПОДТВЕРЖДЕННАЯ запись"
+                        "Нельзя сокращать время смены если в это время есть ПОДТВЕРЖДЕННАЯ запись"
                 );
             }
         }
@@ -106,7 +111,7 @@ public class WorkShiftService {
                 );
             }
 
-        checkCurrentUser(branch);
+
 
         checkWorkShift(branch, request);
 
@@ -189,23 +194,6 @@ public class WorkShiftService {
                 ));
     }
 
-
-    @Transactional(readOnly = true)
-    public WorkShiftResponse findByBarberIdWorkDate(UUID barberId, LocalDate date) {
-        return workShiftRepository.findByBarberEntity_IdAndWorkDate(barberId, date)
-                .map(workShiftMapper::toResponse)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.WORK_SHIFT_NOT_FOUND,
-                        "График барбер на этот день отсутствует"
-                ));
-    }
-
-    @Transactional(readOnly = true)
-    public List<WorkShiftEntity> getWorkShiftByBarberId(UUID barberId) {
-        return workShiftRepository.findByBarberEntity_Id(barberId)
-                .stream()
-                .toList();
-    }
 
     @Transactional(readOnly = true)
     public List<WorkShiftResponse> findByWorkShift(UUID barberId) {

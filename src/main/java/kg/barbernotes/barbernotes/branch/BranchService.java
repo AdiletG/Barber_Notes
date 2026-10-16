@@ -123,11 +123,6 @@ public class BranchService {
     }
 
     @Transactional(readOnly = true)
-    public boolean existsById(UUID id) {
-        return branchRepository.existsById(id);
-    }
-
-    @Transactional(readOnly = true)
     public BranchEntity getById(UUID id) {
         return branchRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -146,17 +141,6 @@ public class BranchService {
 
         return branchMapper.toResponse(branch);
     }
-
-//    @Transactional(readOnly = true)
-//    public BranchResponse getByAddress(String address) {
-//        BranchEntity branch = branchRepository.findByAddress(address)
-//                .orElseThrow(() -> new EntityNotFoundException(
-//                        ErrorCode.BRANCH_NOT_FOUND,
-//                        "Филиал с таким " + address + " отсутствуют"
-//                ));
-//
-//        return branchMapper.toResponse(branch);
-//    }
 
     @Transactional(readOnly = true)
     public Page<BranchResponse> getAllBranches(Pageable pageable) {

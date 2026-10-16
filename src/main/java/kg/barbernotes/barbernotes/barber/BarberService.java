@@ -49,16 +49,18 @@ public class BarberService {
                         "Барбер с таким id отсутствует"
                 ));
 
+        checkCurrentUser(barber);
+
         String barberPhoneNumber = PhoneNormalizer.normalize(request.getPhoneNumber());
 
-        if(barberRepository.existsByPhoneNumber(barberPhoneNumber)) {
+        if(!barberPhoneNumber.equals(barber.getPhoneNumber()) &&
+        barberRepository.existsByPhoneNumber(barberPhoneNumber)) {
             throw new BusinessRuleViolationException(
                     ErrorCode.PHONE_NUMBER_ALREADY_EXISTS,
                     "Барбер с таким номером телефона уже существует"
             );
         }
 
-        checkCurrentUser(barber);
         barber.setPhoneNumber(barberPhoneNumber);
         barberMapper.updateBarber(request,  barber);
         barberRepository.save(barber);

@@ -16,7 +16,7 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
     @Query("""
         SELECT COUNT(a) > 0
         FROM AppointmentEntity a
-        WHERE (:barberId IS NULL OR a.branchEntity.id = :branchId)
+        WHERE (:branchId IS NULL OR a.branchEntity.id = :branchId)
           AND (:status IS NULL OR a.status = :status)
           AND (
               a.appointmentDate > :fromDate

@@ -21,5 +21,6 @@ public interface BarberMapper {
     @Mapping(target = "branchId", source = "branchEntity.id")
     BarberResponse toResponse(BarberEntity barber);
 
+    @Mapping(target = "phoneNumber", ignore = true)
     void updateBarber(BarberUpdateRequest request, @MappingTarget BarberEntity barber);
 }
