@@ -4,6 +4,7 @@ import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.barber.BarberService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.StaffRole;
@@ -90,6 +91,7 @@ public class StaffAccountService {
     public StaffAccountCreateResponse create(StaffAccountCreateRequest request) {
 
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+        String staffAccountPhoneNumber = PhoneNormalizer.normalizer(request.getPhoneNumber());
 
         if(currentUser.isBranchAdmin() &&
                 (request.getRole().equals(StaffRole.BRANCH_ADMIN) || request.getRole().equals(StaffRole.SUPER_ADMIN)))
@@ -100,7 +102,7 @@ public class StaffAccountService {
             );
         }
 
-        if(repository.existsByPhoneNumber(request.getPhoneNumber())) {
+        if(repository.existsByPhoneNumber(staffAccountPhoneNumber)) {
             throw new BusinessRuleViolationException(
                     ErrorCode.PHONE_NUMBER_ALREADY_EXISTS,
                     "Под данным номером сотрудник уже существует"
@@ -109,6 +111,7 @@ public class StaffAccountService {
 
 
         StaffAccountEntity staffAccount = mapper.toEntity(request);
+        staffAccount.setPhoneNumber(staffAccountPhoneNumber);
 
         if(request.getRole() == StaffRole.BARBER) {
 

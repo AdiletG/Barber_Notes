@@ -30,6 +30,7 @@ public class OtpService {
 
     @Transactional(noRollbackFor = CustomAuthenticationException.class)
     public void verify(UUID customerId, String rawCode){
+
         Optional<OtpEntity> oldOtp = otpRepository.findFirstByCustomerEntity_IdOrderByCreatedAtDesc(customerId);
         OffsetDateTime now = OffsetDateTime.now(clock);
 
@@ -53,7 +54,7 @@ public class OtpService {
                 );
             }
 
-            if(lastOtp.getExpiresAt().isBefore(now)) {
+            if(!lastOtp.getExpiresAt().isAfter(now)) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.OTP_EXPIRED,
                         "Время жизни кода истекло, попробуйте получить новый код"

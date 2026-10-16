@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.common.security.auth;
 
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.StaffRole;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -39,7 +40,8 @@ public class AuthService {
 
 
     public AuthResult customerOtpLogin(String phoneNumber, String rawCode) {
-        CustomerEntity customer = customerService.getByPhoneNumber(phoneNumber);
+        String customerPhoneNumber = PhoneNormalizer.normalizer(phoneNumber);
+        CustomerEntity customer = customerService.getByPhoneNumber(customerPhoneNumber);
 
         if(customer.getStatus() != Status.ACTIVE) {
             throw new CustomAuthenticationException(
@@ -134,7 +136,8 @@ public class AuthService {
     }
 
     public AuthResult staffLogin(String phoneNumber, String rawPassword){
-        StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(phoneNumber);
+        String staffAccountPhoneNumber = PhoneNormalizer.normalizer(phoneNumber);
+        StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(staffAccountPhoneNumber);
 
         if(staffAccount.getLockedUntil() != null &&
                 staffAccount.getLockedUntil().isAfter(OffsetDateTime.now(ZoneOffset.UTC))){

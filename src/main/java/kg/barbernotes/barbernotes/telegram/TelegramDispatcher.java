@@ -1,6 +1,6 @@
 package kg.barbernotes.barbernotes.telegram;
 
-import kg.barbernotes.barbernotes.common.exceptions.BaseException;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.telegram.handlers.TelegramContactHandler;
 import kg.barbernotes.barbernotes.telegram.handlers.TelegramSendHandler;
 import lombok.RequiredArgsConstructor;
@@ -53,8 +53,9 @@ public class TelegramDispatcher {
                     return;
                 }
 
+                String phoneNumber = PhoneNormalizer.normalizer(contact.getPhoneNumber());
 
-                contactHandler.checkCustomer(contact.getPhoneNumber(), chatId);
+                contactHandler.checkCustomer(phoneNumber, chatId);
                 return;
             }
 
@@ -100,10 +101,33 @@ public class TelegramDispatcher {
 
             sendHandler.sendKeyboard(chatId, "Просьба выбрать команду из списка ниже", menu());
 
-        }catch (BaseException e){
-            sendHandler.sendMessage(
-                    update.getMessage().getChatId(),
-                    "Ошибка отправки просьба повторить позже");
+        }catch (Exception e){
+            log.error(
+                    "Ошибка при обработке Telegram update. updateId={}",
+                    update != null ? update.getUpdateId() : null,
+                    e
+            );
+
+            if (update == null
+                    || !update.hasMessage()
+                    || update.getMessage() == null) {
+                return;
+            }
+
+            Long chatId = update.getMessage().getChatId();
+
+            try {
+                sendHandler.sendMessage(
+                        chatId,
+                        "Произошла ошибка. Пожалуйста, попробуйте позже."
+                );
+            } catch (Exception sendException) {
+                log.error(
+                        "Не удалось отправить сообщение об ошибке в Telegram. chatId={}",
+                        chatId,
+                        sendException
+                );
+            }
         }
     }
 

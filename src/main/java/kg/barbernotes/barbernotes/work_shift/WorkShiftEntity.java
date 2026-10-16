@@ -15,6 +15,7 @@ import java.time.LocalTime;
 @Table(name = "work_shift",
         uniqueConstraints = @UniqueConstraint(columnNames = {"barber_id", "work_date"}))
 public class WorkShiftEntity extends AuditableEntity {
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barber_id", nullable = false)
     private BarberEntity barberEntity;

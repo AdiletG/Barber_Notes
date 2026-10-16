@@ -9,7 +9,7 @@ import kg.barbernotes.barbernotes.barber_service.BarberServiceEntity;
 import kg.barbernotes.barbernotes.barber_service.BarberServiceService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
-import kg.barbernotes.barbernotes.common.config.TimeConfig;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Source;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -52,8 +51,10 @@ public class CreateAppointmentUseCase {
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
+        String customerPhoneNumber = PhoneNormalizer.normalizer(request.getCustomerPhoneNumber());
+
         Optional<CustomerEntity> customerEntity  = customerRepository
-                .findByPhoneNumber(request.getCustomerPhoneNumber());
+                .findByPhoneNumber(customerPhoneNumber);
 
         CustomerEntity customer;
         if(customerEntity.isPresent()) {
@@ -76,7 +77,7 @@ public class CreateAppointmentUseCase {
 
             customer = new CustomerEntity();
             customer.setFirstName(request.getCustomerName());
-            customer.setPhoneNumber(request.getCustomerPhoneNumber());
+            customer.setPhoneNumber(customerPhoneNumber);
             customer.setCreatedFrom(Source.ONLINE);
             customer.setStatus(Status.ACTIVE);
             customerRepository.save(customer);

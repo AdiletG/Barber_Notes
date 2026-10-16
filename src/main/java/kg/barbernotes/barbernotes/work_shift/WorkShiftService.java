@@ -7,6 +7,7 @@ import kg.barbernotes.barbernotes.barber.*;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
+import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
@@ -19,6 +20,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -35,6 +38,7 @@ public class WorkShiftService {
     private final BarberService barberService;
     private final AppointmentBookingService appointmentBookingService;
     private final CurrentUserProvider currentUserProvider;
+    private final Clock clock;
 
 
     @Transactional(readOnly = true)
@@ -83,6 +87,13 @@ public class WorkShiftService {
         BarberEntity barber = barberService.getById(workShift.getBarberEntity().getId());
         BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
+            if(barber.getStatus() != Status.ACTIVE) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Статус Барбера НЕАКТИВЕН"
+                );
+            }
+
         checkCurrentUser(branch);
 
         checkWorkShift(branch, request);
@@ -108,11 +119,16 @@ public class WorkShiftService {
         BarberEntity barber = barberService.getById(barberId);
         BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
+        if(barber.getStatus() != Status.ACTIVE) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус Барбера НЕАКТИВЕН"
+            );
+        }
+
         checkCurrentUser(branch);
 
         checkWorkShift(branch,  request);
-
-
 
         WorkShiftEntity workShift = workShiftMapper.toEntity(request);
 
@@ -174,6 +190,13 @@ public class WorkShiftService {
     }
 
     @Transactional(readOnly = true)
+    public List<WorkShiftEntity> getWorkShiftByBarberId(UUID barberId) {
+        return workShiftRepository.findByBarberEntity_Id(barberId)
+                .stream()
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<WorkShiftResponse> findByWorkShift(UUID barberId) {
         return workShiftRepository.findByBarberEntity_Id(barberId)
                 .stream()
@@ -199,6 +222,20 @@ public class WorkShiftService {
 
     private void checkWorkShift(BranchEntity branch, WorkShiftRequest request){
 
+        if(branch.getStatus() != Status.ACTIVE){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Статус филиала НЕАКТИВЕН"
+            );
+        }
+
+        if(Duration.between(request.getStartTime(), request.getEndTime()).toMinutes() < 60){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Смена минимум 1 час"
+            );
+        }
+
         if(!request.getStartTime().isBefore(request.getEndTime())) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
@@ -206,7 +243,7 @@ public class WorkShiftService {
             );
         }
 
-        if(request.getWorkDate().isBefore(LocalDate.now())) {
+        if(request.getWorkDate().isBefore(LocalDate.now(clock))) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Дата графика работы не может быть создана в прошлом"

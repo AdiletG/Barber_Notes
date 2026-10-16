@@ -3,6 +3,7 @@ package kg.barbernotes.barbernotes.customer;
 import jakarta.validation.Valid;
 import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
 import kg.barbernotes.barbernotes.appointment.AppointmentResponse;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -37,12 +38,15 @@ public class CustomerController {
             Pageable pageable,
             @RequestParam(required = false) Status status,
             @RequestParam(required = false) String phoneNumber) {
-        if(status == null && phoneNumber == null) {
+        String customerPhoneNumber = phoneNumber != null
+                ? PhoneNormalizer.normalizer(phoneNumber) : null;
+
+        if(status == null && customerPhoneNumber == null) {
             return PageResponse.of(customerService.findAll(pageable));
-        }else if(phoneNumber == null) {
+        }else if(customerPhoneNumber == null) {
             return PageResponse.of(customerService.findByStatus(status, pageable));
         }else {
-            return PageResponse.of(customerService.findByPhoneNumber(phoneNumber, pageable));
+            return PageResponse.of(customerService.findByPhoneNumber(customerPhoneNumber, pageable));
         }
     }
 

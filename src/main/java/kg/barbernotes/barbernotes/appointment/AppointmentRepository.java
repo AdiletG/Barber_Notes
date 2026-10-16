@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.appointment;
 
+import kg.barbernotes.barbernotes.common.enums.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, UUID> {
+
+    boolean existsByBarberEntity_IdAndStatusAndAppointmentDateGreaterThanEqual(
+            UUID barberId, AppointmentStatus status, LocalDate fromDate);
 
     Page<AppointmentEntity> findAllByStatus(AppointmentStatus status, Pageable pageable);
 

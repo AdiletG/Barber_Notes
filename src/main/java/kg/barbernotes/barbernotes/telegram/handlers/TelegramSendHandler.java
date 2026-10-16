@@ -27,7 +27,8 @@ public class TelegramSendHandler{
         } catch (TelegramApiException e) {
             throw new TelegramSendException(
                     ErrorCode.TELEGRAM_API_ERROR,
-                    "Ошибка при отправке сообщения"
+                    "Ошибка при отправке сообщения",
+                    e
             );
         }
     }
@@ -43,7 +44,8 @@ public class TelegramSendHandler{
         } catch (TelegramApiException e) {
             throw new TelegramSendException(
                     ErrorCode.TELEGRAM_API_ERROR,
-                    "Ошибка при отправке клавиатуры"
+                    "Ошибка при отправке клавиатуры",
+                    e
             );
         }
     }
@@ -60,7 +62,8 @@ public class TelegramSendHandler{
         } catch (TelegramApiException e) {
             throw new TelegramSendException(
                     ErrorCode.TELEGRAM_API_ERROR,
-                    "Ошибка при отправке клавиатуры с запросом контакта"
+                    "Ошибка при отправке клавиатуры с запросом контакта",
+                    e
             );
         }
     }
@@ -76,8 +79,10 @@ public class TelegramSendHandler{
         } catch (TelegramApiException e) {
             throw new TelegramSendException(
                     ErrorCode.TELEGRAM_API_ERROR,
-                    "Ошибка при удалении клавиатуры"
+                    "Ошибка при удалении клавиатуры",
+                    e
             );
+
         }
     }
 

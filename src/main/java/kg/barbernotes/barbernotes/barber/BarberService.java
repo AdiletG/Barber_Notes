@@ -1,10 +1,11 @@
 package kg.barbernotes.barbernotes.barber;
 
+import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
+import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
-import kg.barbernotes.barbernotes.common.enums.SubjectType;
-import kg.barbernotes.barbernotes.common.event.BarberServiceDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.event.BranchDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -12,9 +13,8 @@ import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationExcepti
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
 import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
-import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
-import kg.barbernotes.barbernotes.staff_account.StaffAccountEntity;
-import kg.barbernotes.barbernotes.staff_account.StaffAccountService;
+import kg.barbernotes.barbernotes.work_shift.WorkShiftEntity;
+import kg.barbernotes.barbernotes.work_shift.WorkShiftService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -23,6 +23,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +36,8 @@ public class BarberService {
     private final BranchService branchService;
     private final ApplicationEventPublisher eventPublisher;
     private final CurrentUserProvider currentUserProvider;
+    private final AppointmentBookingService appointmentBookingService;
+    private final Clock clock;
 
 
     @Transactional
@@ -46,7 +50,7 @@ public class BarberService {
                 ));
 
         checkCurrentUser(barber);
-
+        barber.setPhoneNumber(PhoneNormalizer.normalizer(request.getPhoneNumber()));
         barberMapper.updateBarber(request,  barber);
         barberRepository.save(barber);
         return barberMapper.toResponse(barber);
@@ -54,20 +58,22 @@ public class BarberService {
 
     @Transactional
     public BarberResponse create(BarberCreateRequest request){
+        BranchEntity branch = branchService.getById(request.getBranchId());
+        BarberEntity barber = barberMapper.toEntity(request);
+        barber.setBranchEntity(branch);
+        checkCurrentUser(barber);
 
+        String barberPhoneNumber = PhoneNormalizer.normalizer(barber.getPhoneNumber());
         if(barberRepository.existsByPhoneNumber(
-                request.getPhoneNumber())) {
+                barberPhoneNumber)) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Барбер с таким номером уже существует"
             );
         }
 
-        BranchEntity branch = branchService.getById(request.getBranchId());
-        BarberEntity barber = barberMapper.toEntity(request);
-        barber.setBranchEntity(branch);
+        barber.setPhoneNumber(barberPhoneNumber);
         barber.setStatus(Status.ACTIVE);
-        checkCurrentUser(barber);
 
         barberRepository.save(barber);
         return barberMapper.toResponse(barber);
@@ -80,7 +86,6 @@ public class BarberService {
                 .findByBranchEntity_IdAndStatus(event.getBranchId(),  Status.ACTIVE);
         for(BarberEntity barber : barbers) {
             barber.setStatus(Status.INACTIVE);
-            eventPublisher.publishEvent(new BarberServiceDeactivatedEvent(barber.getId()));
             barberRepository.save(barber);
         }
     }
@@ -97,9 +102,20 @@ public class BarberService {
         checkCurrentUser(barber);
 
         if(barber.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
+
+
+                if((shift.getWorkDate().isAfter(LocalDate.now(clock))) &&
+                        (appointmentBookingService.existsByBarberEntity_IdAndAppointmentDateAndStatus(
+                                barber.getId(), shift.getWorkDate(), AppointmentStatus.CONFIRMED))
+                ){
+                        throw new BusinessRuleViolationException(
+                                ErrorCode.SHIFT_HAS_APPOINTMENTS,
+                                "График на эту дату нельзя удалить так как есть сформированная запись"
+                        );
+                }
+
             barber.setStatus(Status.INACTIVE);
             barberRepository.save(barber);
-            eventPublisher.publishEvent(new BarberServiceDeactivatedEvent(id));
         } else if (barber.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
             barber.setStatus(Status.ACTIVE);
             barberRepository.save(barber);
@@ -113,11 +129,6 @@ public class BarberService {
         return barberMapper.toResponse(barber);
     }
 
-
-    @Transactional(readOnly = true)
-    public boolean existsById(UUID id) {
-        return barberRepository.existsById(id);
-    }
 
     @Transactional(readOnly = true)
     public BarberEntity getById(UUID id) {
@@ -136,14 +147,6 @@ public class BarberService {
                         ErrorCode.BARBER_NOT_FOUND,
                         "Барбера с таким id не существует"
                 ));
-    }
-
-    @Transactional(readOnly = true)
-    public List<BarberResponse> findByBranchIdAndStatusTOList(UUID branchId, Status status) {
-        return barberRepository.findByBranchEntity_IdAndStatus(branchId, status)
-                .stream()
-                .map(barberMapper::toResponse)
-                .toList();
     }
 
     @Transactional(readOnly = true)
