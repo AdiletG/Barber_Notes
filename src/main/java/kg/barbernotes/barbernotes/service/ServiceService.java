@@ -11,7 +11,6 @@ import kg.barbernotes.barbernotes.service.dto.ServiceUpdateRequest;
 import kg.barbernotes.barbernotes.service_category.ServiceCategoryEntity;
 import kg.barbernotes.barbernotes.service_category.ServiceCategoryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,10 +34,13 @@ public class ServiceService {
                         "Сервис с таким id отсутствует"
                 ));
 
-        if(request.getCategoryId() != null && !categoryService.existsById(request.getCategoryId())){
-            throw new EntityNotFoundException(
-                    ErrorCode.SERVICE_CATEGORY_NOT_FOUND,
-                    "Категория с таким id не существует"
+        ServiceCategoryEntity category =
+                categoryService.getById(service.getServiceCategoryEntity().getId());
+
+        if(category.getStatus() != Status.ACTIVE){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.CATEGORY_IS_INACTIVE,
+                    "Категория услуги НЕАКТИВНАЯ"
             );
         }
 
@@ -88,6 +90,16 @@ public class ServiceService {
                 ));
 
         if(service.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE){
+            ServiceCategoryEntity category =
+                    categoryService.getById(service.getServiceCategoryEntity().getId());
+
+            if(category.getStatus() != Status.ACTIVE){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.CATEGORY_IS_INACTIVE,
+                        "Категория услуги НЕАКТИВНАЯ нельзя активировать услугу"
+                );
+            }
+
             service.setStatus(Status.INACTIVE);
             serviceRepository.save(service);
         } else if (service.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {

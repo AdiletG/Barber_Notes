@@ -12,7 +12,6 @@ import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryCreateRequ
 import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryResponse;
 import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryUpdateRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,7 +25,6 @@ public class ServiceCategoryService {
 
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final ServiceCategoryMapper serviceCategoryMapper;
-    private final ApplicationEventPublisher eventPublisher;
     private final CurrentUserProvider currentUserProvider;
 
     @Transactional

@@ -21,6 +21,8 @@ import kg.barbernotes.barbernotes.customer.CustomerEntity;
 import kg.barbernotes.barbernotes.customer.CustomerRepository;
 import kg.barbernotes.barbernotes.service.ServiceEntity;
 import kg.barbernotes.barbernotes.service.ServiceService;
+import kg.barbernotes.barbernotes.service_category.ServiceCategoryEntity;
+import kg.barbernotes.barbernotes.service_category.ServiceCategoryService;
 import kg.barbernotes.barbernotes.work_shift.WorkShiftEntity;
 import kg.barbernotes.barbernotes.work_shift.WorkShiftService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +43,7 @@ public class CreateAppointmentUseCase {
     private final BarberService  barberService;
     private final BranchService branchService;
     private final ServiceService  serviceService;
+    private final ServiceCategoryService  categoryService;
     private final AppointmentRepository appointmentRepository;
     private final AppointmentMapper appointmentMapper;
     private final AppointmentServiceMapper  appointmentServiceMapper;
@@ -55,6 +58,7 @@ public class CreateAppointmentUseCase {
     public AppointmentResponse execute(AppointmentCreateRequest request) {
         String customerPhoneNumber = PhoneNormalizer.normalize(request.getCustomerPhoneNumber());
 
+        //Customer
         Optional<CustomerEntity> customerEntity  = customerRepository
                 .findByPhoneNumber(customerPhoneNumber);
 
@@ -84,6 +88,8 @@ public class CreateAppointmentUseCase {
             customer.setStatus(Status.ACTIVE);
             customerRepository.save(customer);
         }
+
+        //Branch
         BranchEntity branchEntity = branchService.getById(request.getBranchId());
         if(branchEntity.getStatus() != Status.ACTIVE) {
             throw new BusinessRuleViolationException(
@@ -91,6 +97,8 @@ public class CreateAppointmentUseCase {
                     "Статус филиала НЕАКТИВЕН"
             );
         }
+
+        //Barber
         BarberEntity barberEntity = barberService.getById(request.getBarberId());
 
         if(barberEntity.getStatus() != Status.ACTIVE) {
@@ -107,6 +115,7 @@ public class CreateAppointmentUseCase {
             );
         }
 
+        //Service
         List<ServiceEntity> serviceEntities = new ArrayList<>();
 
         int totalDurationMinutes = BREAK_MINUTES;
@@ -115,6 +124,17 @@ public class CreateAppointmentUseCase {
         Set<UUID> seen = new HashSet<>();
 
         for (UUID serviceId : request.getServiceIds()) {
+            ServiceEntity serviceEntity = serviceService.getById(serviceId);
+
+            ServiceCategoryEntity category =
+                    categoryService.getById(serviceEntity.getServiceCategoryEntity().getId());
+
+            if(category.getStatus() != Status.ACTIVE){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.CATEGORY_IS_INACTIVE,
+                        "Категория услуги НЕАКТИВНАЯ"
+                );
+            }
 
             if(!seen.add(serviceId)){
                 throw new BusinessRuleViolationException(
@@ -122,8 +142,6 @@ public class CreateAppointmentUseCase {
                         "Услуга уже выбрана"
                 );
             }
-
-            ServiceEntity serviceEntity = serviceService.getById(serviceId);
 
             if(serviceEntity.getStatus() != Status.ACTIVE) {
                 throw new BusinessRuleViolationException(
@@ -152,6 +170,7 @@ public class CreateAppointmentUseCase {
             serviceEntities.add(serviceEntity);
         }
 
+        //Work Shift
         WorkShiftEntity workShift =
                 workShiftService.getByBarberIdWorkDate(barberEntity.getId(), request.getAppointmentDate());
 
