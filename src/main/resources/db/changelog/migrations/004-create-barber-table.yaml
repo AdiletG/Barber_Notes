@@ -86,8 +86,8 @@ databaseChangeLog:
 
 
         - sql:
-            sql: """
-              ALTER TABLE barber
+            sql:
+              "ALTER TABLE barber
               ADD CONSTRAINT chk_deactivation_reason_barber_relation
               CHECK (
                   (
@@ -102,7 +102,7 @@ databaseChangeLog:
                       AND deactivated_at IS NOT NULL
                       AND deactivation_reason IN ('MANUAL', 'BRANCH_CLOSED')
                   )
-              );"""
+              );"
         
 
         - createIndex:

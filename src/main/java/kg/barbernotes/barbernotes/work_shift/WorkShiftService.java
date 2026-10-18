@@ -87,14 +87,14 @@ public class WorkShiftService {
         BarberEntity barber = barberService.getById(workShift.getBarberEntity().getId());
         BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
+            checkCurrentUser(branch);
+
             if(barber.getStatus() != Status.ACTIVE) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.BUSINESS_RULE_VIOLATION,
                         "Статус Барбера НЕАКТИВЕН"
                 );
             }
-
-            checkCurrentUser(branch);
 
         List<AppointmentEntity> appointments =
                 appointmentBookingService.getAppointmentByBarberIdAndDate(barber.getId(), workShift.getWorkDate());
@@ -135,14 +135,14 @@ public class WorkShiftService {
         BarberEntity barber = barberService.getById(barberId);
         BranchEntity branch = branchService.getById(barber.getBranchEntity().getId());
 
+            checkCurrentUser(branch);
+
         if(barber.getStatus() != Status.ACTIVE) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     "Статус Барбера НЕАКТИВЕН"
             );
         }
-
-        checkCurrentUser(branch);
 
         checkWorkShift(branch,  request);
 

@@ -1,13 +1,13 @@
 package kg.barbernotes.barbernotes.service_category;
 
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
-import kg.barbernotes.barbernotes.common.event.ServiceCategoryDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
 import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
+import kg.barbernotes.barbernotes.service.ServiceEntity;
 import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryCreateRequest;
 import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryResponse;
 import kg.barbernotes.barbernotes.service_category.dto.ServiceCategoryUpdateRequest;
@@ -93,10 +93,18 @@ public class ServiceCategoryService {
                 ));
 
         if(category.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE) {
+
+            for(ServiceEntity service : category.getServiceEntities()){
+                if(service.getStatus() == Status.ACTIVE){
+                    throw new BusinessRuleViolationException(
+                            ErrorCode.CATEGORY_HAS_ACTIVE_SERVICE,
+                            "Нельзя ДЕАКТИВИРОВАТЬ категорию если есть активные услуги"
+                    );
+                }
+            }
+
             category.setStatus(Status.INACTIVE);
             serviceCategoryRepository.save(category);
-
-            eventPublisher.publishEvent(new ServiceCategoryDeactivatedEvent(id));
         } else if (category.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
             category.setStatus(Status.ACTIVE);
             serviceCategoryRepository.save(category);
@@ -108,7 +116,7 @@ public class ServiceCategoryService {
         }else {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Статус категория уже АКТИВНЫЙ"
+                    "Категория уже имеет запрошенный статус"
             );
         }
         return serviceCategoryMapper.toResponse(category);
@@ -135,6 +143,15 @@ public class ServiceCategoryService {
     @Transactional(readOnly = true)
     public boolean existsById(UUID id){
         return serviceCategoryRepository.existsById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public ServiceCategoryEntity getById(UUID id) {
+        return serviceCategoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.SERVICE_CATEGORY_NOT_FOUND,
+                        "Категория отсутствует"
+                ));
     }
 
     @Transactional(readOnly = true)

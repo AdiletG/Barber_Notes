@@ -1,7 +1,6 @@
 package kg.barbernotes.barbernotes.service;
 
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
-import kg.barbernotes.barbernotes.common.event.ServiceCategoryDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
@@ -9,6 +8,7 @@ import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.service.dto.ServiceCreateRequest;
 import kg.barbernotes.barbernotes.service.dto.ServiceResponse;
 import kg.barbernotes.barbernotes.service.dto.ServiceUpdateRequest;
+import kg.barbernotes.barbernotes.service_category.ServiceCategoryEntity;
 import kg.barbernotes.barbernotes.service_category.ServiceCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -50,10 +50,19 @@ public class ServiceService {
     @Transactional
     public ServiceResponse create(ServiceCreateRequest request) {
 
-        if(!categoryService.existsById(request.getCategoryId())){
+        ServiceCategoryEntity category = categoryService.getById(request.getCategoryId());
+
+        if(!categoryService.existsById(category.getId())){
             throw new EntityNotFoundException(
                     ErrorCode.SERVICE_CATEGORY_NOT_FOUND,
                     "Категория с таким id не существует"
+            );
+        }
+
+        if(category.getStatus() != Status.ACTIVE){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Категория НЕАКТИВНА нельзя создать сервис"
             );
         }
 
@@ -96,15 +105,6 @@ public class ServiceService {
             );
         }
         return serviceMapper.toResponse(service);
-    }
-
-    @Transactional
-    @EventListener
-    public void deactivateAllByCategoryId(ServiceCategoryDeactivatedEvent event) {
-        List<ServiceEntity> services = serviceRepository
-                .findByServiceCategoryEntity_IdAndStatus(event.getCategoryId(), Status.ACTIVE);
-        
-        services.forEach(service -> service.setStatus(Status.INACTIVE));
     }
 
     @Transactional(readOnly = true)

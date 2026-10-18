@@ -107,11 +107,11 @@ public class BranchService {
         }else if(branch.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE){
             branch.setStatus(request.getStatus());
             branchRepository.save(branch);
-            eventPublisher.publishEvent(BranchActivatedEvent.class);
+            eventPublisher.publishEvent(new BranchActivatedEvent(id));
         }else {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Статус филиала уже АКТИВНЫЙ"
+                    "Филиал уже имеет запрошенный статус"
             );
         }
 
