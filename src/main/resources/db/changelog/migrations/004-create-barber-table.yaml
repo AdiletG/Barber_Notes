@@ -84,13 +84,26 @@ databaseChangeLog:
             sql: "ALTER TABLE barber ADD CONSTRAINT chk_deactivation_reason_barber
              CHECK (deactivation_reason IN ('MANUAL', 'BRANCH_CLOSED'));"
 
+
         - sql:
-            sql: "ALTER TABLE barber ADD CONSTRAINT chk_deactivation_reason_barber_relation
-            CHECK (
-            (status = 'ACTIVE' AND deactivation_reason = '' AND deactivated_at ? '') OR 
-            (status = 'INACTIVE' AND deactivated_at NOT ? '' AND 
-            (deactivation_reason = 'MANUAL' OR deactivation_reason = 'BRANCH_CLOSED'))
-            );"
+            sql: """
+              ALTER TABLE barber
+              ADD CONSTRAINT chk_deactivation_reason_barber_relation
+              CHECK (
+                  (
+                      status = 'ACTIVE'
+                      AND deactivation_reason IS NULL
+                      AND deactivated_at IS NULL
+                  )
+                  OR
+                  (
+                      status = 'INACTIVE'
+                      AND deactivation_reason IS NOT NULL
+                      AND deactivated_at IS NOT NULL
+                      AND deactivation_reason IN ('MANUAL', 'BRANCH_CLOSED')
+                  )
+              );"""
+        
 
         - createIndex:
             tableName: barber

@@ -6,6 +6,7 @@ import kg.barbernotes.barbernotes.branch.dto.BranchCreateRequest;
 import kg.barbernotes.barbernotes.branch.dto.BranchResponse;
 import kg.barbernotes.barbernotes.branch.dto.BranchUpdateRequest;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
+import kg.barbernotes.barbernotes.common.event.BranchActivatedEvent;
 import kg.barbernotes.barbernotes.common.event.BranchDeactivatedEvent;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
@@ -106,6 +107,7 @@ public class BranchService {
         }else if(branch.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE){
             branch.setStatus(request.getStatus());
             branchRepository.save(branch);
+            eventPublisher.publishEvent(BranchActivatedEvent.class);
         }else {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,

@@ -8,6 +8,7 @@ import kg.barbernotes.barbernotes.barber.dto.BarberUpdateRequest;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.enums.DeactivationReason;
+import kg.barbernotes.barbernotes.common.event.BranchActivatedEvent;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.event.BranchDeactivatedEvent;
@@ -94,6 +95,21 @@ public class BarberService {
 
     @Transactional
     @EventListener
+    public void activateAllByBranchId(BranchActivatedEvent event) {
+        List<BarberEntity> barbers = barberRepository
+                .findByBranchEntity_IdAndStatus(event.getBranchId(),  Status.INACTIVE);
+        for(BarberEntity barber : barbers) {
+            if(barber.getDeactivationReason() == DeactivationReason.BRANCH_CLOSED){
+                barber.setStatus(Status.ACTIVE);
+                barber.setDeactivationReason(null);
+                barber.setDeactivatedAt(null);
+                barberRepository.save(barber);
+            }
+        }
+    }
+
+    @Transactional
+    @EventListener
     public void deactivateAllByBranchId(BranchDeactivatedEvent event) {
         List<BarberEntity> barbers = barberRepository
                 .findByBranchEntity_IdAndStatus(event.getBranchId(),  Status.ACTIVE);
@@ -135,21 +151,15 @@ public class BarberService {
 
         } else if (barber.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
 
-            if(barber.getDeactivationReason() != DeactivationReason.MANUAL) {
-                throw new BusinessRuleViolationException(
-                        ErrorCode.ANOTHER_ACTIVATION_RULE,
-                        "Барбер ДЕАКТИВИРОВАН другим путем"
-                );
-            }
-
             if(barber.getBranchEntity().getStatus() != Status.ACTIVE) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.BRANCH_IS_INACTIVE,
                         "Нельзя Активировать барбера если филиал НЕАКТИВЕН"
                 );
             }
-
             barber.setStatus(Status.ACTIVE);
+            barber.setDeactivationReason(null);
+            barber.setDeactivatedAt(null);
             barberRepository.save(barber);
         }else {
             throw new BusinessRuleViolationException(
