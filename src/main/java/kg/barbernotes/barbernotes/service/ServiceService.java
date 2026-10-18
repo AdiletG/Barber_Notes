@@ -35,7 +35,7 @@ public class ServiceService {
                 ));
 
         ServiceCategoryEntity category =
-                categoryService.getById(service.getServiceCategoryEntity().getId());
+                categoryService.getById(request.getCategoryId());
 
         if(category.getStatus() != Status.ACTIVE){
             throw new BusinessRuleViolationException(
@@ -43,7 +43,7 @@ public class ServiceService {
                     "Категория услуги НЕАКТИВНАЯ"
             );
         }
-
+        service.setServiceCategoryEntity(category);
         serviceMapper.updateEntityFromDto(request,service);
         serviceRepository.save(service);
         return serviceMapper.toResponse(service);
@@ -53,13 +53,6 @@ public class ServiceService {
     public ServiceResponse create(ServiceCreateRequest request) {
 
         ServiceCategoryEntity category = categoryService.getById(request.getCategoryId());
-
-        if(!categoryService.existsById(category.getId())){
-            throw new EntityNotFoundException(
-                    ErrorCode.SERVICE_CATEGORY_NOT_FOUND,
-                    "Категория с таким id не существует"
-            );
-        }
 
         if(category.getStatus() != Status.ACTIVE){
             throw new BusinessRuleViolationException(
@@ -76,6 +69,7 @@ public class ServiceService {
         }
 
         ServiceEntity service = serviceMapper.toEntity(request);
+        service.setServiceCategoryEntity(category);
         service.setStatus(Status.ACTIVE);
         serviceRepository.save(service);
         return serviceMapper.toResponse(service);
@@ -90,6 +84,12 @@ public class ServiceService {
                 ));
 
         if(service.getStatus() == Status.ACTIVE && request.getStatus() == Status.INACTIVE){
+
+            service.setStatus(Status.INACTIVE);
+
+            serviceRepository.save(service);
+
+        } else if (service.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
             ServiceCategoryEntity category =
                     categoryService.getById(service.getServiceCategoryEntity().getId());
 
@@ -100,10 +100,8 @@ public class ServiceService {
                 );
             }
 
-            service.setStatus(Status.INACTIVE);
-            serviceRepository.save(service);
-        } else if (service.getStatus() == Status.INACTIVE && request.getStatus() == Status.ACTIVE) {
             service.setStatus(Status.ACTIVE);
+
             serviceRepository.save(service);
         }else if(service.getStatus() == Status.INACTIVE && request.getStatus() == Status.INACTIVE){
             throw new BusinessRuleViolationException(

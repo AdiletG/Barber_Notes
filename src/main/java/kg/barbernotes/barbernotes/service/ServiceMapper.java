@@ -15,10 +15,12 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 )
 public interface ServiceMapper {
 
+    @Mapping(target = "serviceCategoryEntity", ignore = true)
     ServiceEntity toEntity(ServiceCreateRequest request);
 
     @Mapping(target = "categoryId", source = "serviceCategoryEntity.id")
     ServiceResponse toResponse(ServiceEntity entity);
 
+    @Mapping(target = "serviceCategoryEntity", ignore = true)
     void updateEntityFromDto(ServiceUpdateRequest request, @MappingTarget ServiceEntity entity);
 }
