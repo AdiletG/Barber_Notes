@@ -56,8 +56,8 @@ public class ServiceService {
 
         if(category.getStatus() != Status.ACTIVE){
             throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Категория НЕАКТИВНА нельзя создать сервис"
+                    ErrorCode.CATEGORY_IS_INACTIVE,
+                    "Категория НЕАКТИВНА, нельзя создать сервис"
             );
         }
 
@@ -96,7 +96,7 @@ public class ServiceService {
             if(category.getStatus() != Status.ACTIVE){
                 throw new BusinessRuleViolationException(
                         ErrorCode.CATEGORY_IS_INACTIVE,
-                        "Категория услуги НЕАКТИВНАЯ нельзя активировать услугу"
+                        "Категория услуги НЕАКТИВНАЯ, нельзя активировать услугу"
                 );
             }
 
