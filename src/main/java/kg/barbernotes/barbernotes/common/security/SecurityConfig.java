@@ -1,7 +1,9 @@
 package kg.barbernotes.barbernotes.common.security;
 
 import kg.barbernotes.barbernotes.common.security.auth.JwtAuthenticationFilter;
+import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,9 +18,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final JwtAuthenticationFilter  jwtAuthenticationFilter;
+   private final JwtAuthenticationFilter  jwtAuthenticationFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final PublicEndpointPolicy publicEndpointPolicy;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -31,8 +34,26 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(publicEndpointPolicy.matchers()).permitAll()
                         .anyRequest().authenticated()
-                ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                ).addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+                .addFilterBefore(
+                        rateLimitFilter,
+                        JwtAuthenticationFilter.class
+                );
 
         return http.build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(
+            RateLimitFilter rateLimitFilter
+    ) {
+        FilterRegistrationBean<RateLimitFilter> registration =
+                new FilterRegistrationBean<>(rateLimitFilter);
+
+        registration.setEnabled(false);
+        return registration;
     }
 }

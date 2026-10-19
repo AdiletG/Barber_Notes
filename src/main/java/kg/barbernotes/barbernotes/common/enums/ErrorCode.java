@@ -20,6 +20,7 @@ public enum ErrorCode {
 
     //Too Many Request
     OTP_COOLDOWN_ACTIVE("OTP_COOLDOWN_ACTIVE", HttpStatus.TOO_MANY_REQUESTS),
+    RATE_LIMIT_EXCEEDED("RATE_LIMIT_EXCEEDED", HttpStatus.TOO_MANY_REQUESTS),
 
     //Forbidden
     FORBIDDEN("FORBIDDEN", HttpStatus.FORBIDDEN),

@@ -39,6 +39,7 @@ app:
     staff:
       access-ttl-minutes: 15
       refresh-ttl-minutes: 10080
+
   rate-limit:
     enabled: true
 
@@ -51,10 +52,10 @@ app:
       refill-period: 2m
 
     cache:
-      maximum-size: 2000000
+      maximum-size: 200000
       idle-expiration: 20m
 
     booking:
-      max-active-record: 2
+      max-active-records: 2
       max-services-per-record: 5
       admin-active-records-limit: 100

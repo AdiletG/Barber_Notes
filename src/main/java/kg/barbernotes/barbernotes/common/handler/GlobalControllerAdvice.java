@@ -4,9 +4,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import kg.barbernotes.barbernotes.common.dto.ErrorResponse;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.BaseException;
+import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -198,6 +201,32 @@ public class GlobalControllerAdvice {
                 "Формат содержимого запроса не поддерживается. Используйте application/json",
                 request.getRequestURI()
         );
+    }
+
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity<ErrorResponse> rateLimitException(
+            RateLimitException ex,
+            HttpServletRequest request
+    ){
+        log.warn(
+                "Rate limit exceeded: path={}, retryAfter={}s",
+                request.getRequestURI(),
+                ex.getRetryAfterSeconds()
+        );
+
+        ResponseEntity<ErrorResponse> errorResponse = errorService(
+                ErrorCode.RATE_LIMIT_EXCEEDED,
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(
+                        HttpHeaders.RETRY_AFTER,
+                        String.valueOf(ex.getRetryAfterSeconds())
+                )
+                .body(errorResponse.getBody());
     }
 
     @ExceptionHandler(Exception.class)
