@@ -22,13 +22,13 @@ public class AppointmentCreateRequest {
     private String customerPhoneNumber;
 
     @NotBlank(message = "ФИО клиента обязательное")
-    @Size(max = 100, message = "Длина ФИО но должно превышать 100 символов")
+    @Size(max = 100, message = "Длина ФИО не должно превышать 100 символов")
     private String customerName;
 
-    @NotNull(message = "Барбер для записи обязательна")
+    @NotNull(message = "Барбер для записи обязателен")
     private UUID barberId;
 
-    @NotNull(message = "Филиал для записи обязательна")
+    @NotNull(message = "Филиал для записи обязательн")
     private UUID branchId;
 
     @NotNull(message = "Дата записи обязательна")
@@ -39,7 +39,6 @@ public class AppointmentCreateRequest {
     private LocalTime startTime;
 
     @NotEmpty(message = "Услуга обязательна")
-    @Size(max = 5, message = "Не больше 5-услуг на одну запись")
     private List<UUID> serviceIds;
 
 }

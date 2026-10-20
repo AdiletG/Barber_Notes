@@ -11,6 +11,10 @@ import kg.barbernotes.barbernotes.barber_service.BarberServiceEntity;
 import kg.barbernotes.barbernotes.barber_service.BarberServiceService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.enums.RateLimitGroup;
+import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
+import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimitDecision;
+import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimiterService;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Source;
@@ -26,6 +30,7 @@ import kg.barbernotes.barbernotes.service_category.ServiceCategoryService;
 import kg.barbernotes.barbernotes.work_shift.WorkShiftEntity;
 import kg.barbernotes.barbernotes.work_shift.WorkShiftService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +41,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CreateAppointmentUseCase {
@@ -51,12 +57,32 @@ public class CreateAppointmentUseCase {
     private final WorkShiftService  workShiftService;
     private final BarberServiceService barberServiceService;
     private final Clock clock;
+    private final RateLimiterService  rateLimiterService;
 
     private static final int BREAK_MINUTES = 15;
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
         String customerPhoneNumber = PhoneNormalizer.normalize(request.getCustomerPhoneNumber());
+
+        String number = customerPhoneNumber.substring(0, customerPhoneNumber.length() - 4);
+
+
+        RateLimitDecision decision = rateLimiterService.check(
+                RateLimitGroup.PHONE,
+                customerPhoneNumber
+        );
+
+        if(!decision.allowed()){
+            log.warn(
+                    "Rate limit skipped: client PHONE ={}",
+                    number
+            );
+
+            throw new RateLimitException(
+                    decision.retryAfterSeconds()
+            );
+        }
 
         //Customer
         Optional<CustomerEntity> customerEntity  = customerRepository
@@ -78,13 +104,6 @@ public class CreateAppointmentUseCase {
                 throw new BusinessRuleViolationException(
                         ErrorCode.CUSTOMER_NAME_NOT_FOUND,
                         "Имя пользователя не может быть пустым"
-                );
-            }
-
-            if(request.getCustomerName().length() > 100){
-                throw new BusinessRuleViolationException(
-                        ErrorCode.DATA_CONFLICT,
-                        "Длина ФИО но должно превышать 100 символов"
                 );
             }
 
@@ -123,12 +142,6 @@ public class CreateAppointmentUseCase {
         }
 
         //Service
-        if(request.getServiceIds().size() > 5){
-            throw new BusinessRuleViolationException(
-                ErrorCode.INVALID_INPUT,
-                    "Не больше 5-услуг на одну запись"
-            );
-        }
 
         List<ServiceEntity> serviceEntities = new ArrayList<>();
 
