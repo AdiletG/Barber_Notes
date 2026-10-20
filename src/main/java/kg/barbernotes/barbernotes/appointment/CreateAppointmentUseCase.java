@@ -81,6 +81,13 @@ public class CreateAppointmentUseCase {
                 );
             }
 
+            if(request.getCustomerName().length() > 100){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.DATA_CONFLICT,
+                        "Длина ФИО но должно превышать 100 символов"
+                );
+            }
+
             customer = new CustomerEntity();
             customer.setFirstName(request.getCustomerName());
             customer.setPhoneNumber(customerPhoneNumber);
@@ -116,6 +123,13 @@ public class CreateAppointmentUseCase {
         }
 
         //Service
+        if(request.getServiceIds().size() > 5){
+            throw new BusinessRuleViolationException(
+                ErrorCode.INVALID_INPUT,
+                    "Не больше 5-услуг на одну запись"
+            );
+        }
+
         List<ServiceEntity> serviceEntities = new ArrayList<>();
 
         int totalDurationMinutes = BREAK_MINUTES;

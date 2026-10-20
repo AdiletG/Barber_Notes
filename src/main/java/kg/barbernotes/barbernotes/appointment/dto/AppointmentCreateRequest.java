@@ -17,20 +17,21 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AppointmentCreateRequest {
 
-    @NotBlank(message = "")
+    @NotBlank(message = "Номер телефона обязателен")
     @Pattern(regexp = "\\d{10,12}")
     private String customerPhoneNumber;
 
-    @NotBlank(message = "")
+    @NotBlank(message = "ФИО клиента обязательное")
+    @Size(max = 100, message = "Длина ФИО но должно превышать 100 символов")
     private String customerName;
 
-    @NotNull()
+    @NotNull(message = "Барбер для записи обязательна")
     private UUID barberId;
 
-    @NotNull()
+    @NotNull(message = "Филиал для записи обязательна")
     private UUID branchId;
 
-    @NotNull()
+    @NotNull(message = "Дата записи обязательна")
     @FutureOrPresent(message = "Дата не может быть в прошедшем времени")
     private LocalDate appointmentDate;
 
@@ -38,6 +39,7 @@ public class AppointmentCreateRequest {
     private LocalTime startTime;
 
     @NotEmpty(message = "Услуга обязательна")
+    @Size(max = 5, message = "Не больше 5-услуг на одну запись")
     private List<UUID> serviceIds;
 
 }
