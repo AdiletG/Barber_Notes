@@ -208,12 +208,6 @@ public class GlobalControllerAdvice {
             RateLimitException ex,
             HttpServletRequest request
     ){
-        log.warn(
-                "Rate limit exceeded: path={}, retryAfter={}s",
-                request.getRequestURI(),
-                ex.getRetryAfterSeconds()
-        );
-
         ResponseEntity<ErrorResponse> errorResponse = errorService(
                 ErrorCode.RATE_LIMIT_EXCEEDED,
                 ex.getMessage(),

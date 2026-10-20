@@ -4,7 +4,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.RateLimitGroup;
 import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +14,6 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
-import static org.aspectj.weaver.tools.cache.SimpleCacheFactory.path;
 
 @Slf4j
 @Component
@@ -60,7 +58,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         RateLimitDecision decision = rateLimiterService.check(
                 RateLimitGroup.IP,
-                path
+                remoteAddr
         );
 
         if(!decision.allowed()){
