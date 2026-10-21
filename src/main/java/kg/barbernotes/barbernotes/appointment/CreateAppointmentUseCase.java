@@ -11,6 +11,7 @@ import kg.barbernotes.barbernotes.barber_service.BarberServiceEntity;
 import kg.barbernotes.barbernotes.barber_service.BarberServiceService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.config.RateLimitProperties;
 import kg.barbernotes.barbernotes.common.enums.RateLimitGroup;
 import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
 import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimitDecision;
@@ -58,14 +59,23 @@ public class CreateAppointmentUseCase {
     private final BarberServiceService barberServiceService;
     private final Clock clock;
     private final RateLimiterService  rateLimiterService;
+    private final RateLimitProperties rateLimitProperties;
 
     private static final int BREAK_MINUTES = 15;
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
+
+        if(request.getServiceIds().size() > rateLimitProperties.booking().maxServicesPerRecord()){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.INVALID_INPUT,
+                    "На одну запись максимум 5 услуг"
+            );
+        }
+
         String customerPhoneNumber = PhoneNormalizer.normalize(request.getCustomerPhoneNumber());
 
-        String number = customerPhoneNumber.substring(0, customerPhoneNumber.length() - 4);
+        String number = customerPhoneNumber.substring(customerPhoneNumber.length() - 4);
 
 
         RateLimitDecision decision = rateLimiterService.check(
@@ -75,8 +85,8 @@ public class CreateAppointmentUseCase {
 
         if(!decision.allowed()){
             log.warn(
-                    "Rate limit skipped: client PHONE ={}",
-                    number
+                    "Rate limit exceeded: client PHONE ={}, retryAfter ={}",
+                    number, decision.retryAfterSeconds()
             );
 
             throw new RateLimitException(
