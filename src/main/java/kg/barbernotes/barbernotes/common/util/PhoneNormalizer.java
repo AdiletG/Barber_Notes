@@ -7,6 +7,15 @@ import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationExcepti
 public final class PhoneNormalizer {
     private PhoneNormalizer() {}
 
+    public static String phoneMask(String phone) {
+        if (phone == null || phone.isEmpty()) return null;
+
+        int number = phone.length() - 4;
+
+        return "*".repeat(number)
+                + phone.substring(number);
+    }
+
     public static String normalize(String raw){
         if(raw == null) return null;
 

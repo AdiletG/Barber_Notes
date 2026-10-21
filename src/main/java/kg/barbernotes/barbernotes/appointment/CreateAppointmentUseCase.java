@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -66,17 +67,18 @@ public class CreateAppointmentUseCase {
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
 
-        if(request.getServiceIds().size() > rateLimitProperties.booking().maxServicesPerRecord()){
+        int serviceLimit = rateLimitProperties.booking().maxServicesPerRecord();
+
+        if(request.getServiceIds().size() > serviceLimit){
             throw new BusinessRuleViolationException(
                     ErrorCode.INVALID_INPUT,
-                    "На одну запись максимум 5 услуг"
+                    "На одну запись максимум " + serviceLimit + " услуг"
             );
         }
 
         String customerPhoneNumber = PhoneNormalizer.normalize(request.getCustomerPhoneNumber());
 
-        String number = customerPhoneNumber.substring(customerPhoneNumber.length() - 4);
-
+        String number = PhoneNormalizer.phoneMask(customerPhoneNumber);
 
         RateLimitDecision decision = rateLimiterService.check(
                 RateLimitGroup.PHONE,
@@ -107,6 +109,21 @@ public class CreateAppointmentUseCase {
                         ErrorCode.BUSINESS_RULE_VIOLATION,
                         "Статус клиента неактивен либо заблокирован "
                         );
+            }
+
+            int appointmentCount = appointmentRepository.hasUpcomingCustomer(
+                    customer.getId(), AppointmentStatus.CONFIRMED,
+                    LocalDate.now(clock), LocalTime.now(clock)
+            );
+
+            int customerAppointmentLimit = rateLimitProperties.booking().maxActiveRecords();
+
+            if(appointmentCount >= customerAppointmentLimit) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.CUSTOMER_APPOINTMENT_LIMIT_EXCEEDED,
+                        "На одного активного клиента не больше "
+                        + customerAppointmentLimit + " активных записей"
+                );
             }
 
         }else {

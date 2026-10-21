@@ -16,6 +16,26 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
     @Query("""
         SELECT COUNT(a) > 0
         FROM AppointmentEntity a
+        WHERE (:customerId IS NULL OR a.customerEntity.id = :customerId)
+          AND (:status IS NULL OR a.status = :status)
+          AND (
+              a.appointmentDate > :fromDate
+              OR (
+                  a.appointmentDate = :fromDate
+                  AND a.startTime >= :fromTime
+              )
+          )
+        """)
+    int hasUpcomingCustomer(
+            @Param("customerId") UUID customerId,
+            @Param("status") AppointmentStatus status,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("fromTime") LocalTime fromTime
+    );
+
+    @Query("""
+        SELECT COUNT(a) > 0
+        FROM AppointmentEntity a
         WHERE (:branchId IS NULL OR a.branchEntity.id = :branchId)
           AND (:status IS NULL OR a.status = :status)
           AND (
