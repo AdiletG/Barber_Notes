@@ -14,10 +14,10 @@ import java.util.UUID;
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, UUID> {
 
     @Query("""
-        SELECT COUNT(a) > 0
+        SELECT COUNT(a)
         FROM AppointmentEntity a
-        WHERE (:customerId IS NULL OR a.customerEntity.id = :customerId)
-          AND (:status IS NULL OR a.status = :status)
+        WHERE a.customerEntity.id = :customerId
+          AND a.status = :status
           AND (
               a.appointmentDate > :fromDate
               OR (
@@ -26,7 +26,7 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
               )
           )
         """)
-    int hasUpcomingCustomer(
+    long countCustomerFutureAppointments(
             @Param("customerId") UUID customerId,
             @Param("status") AppointmentStatus status,
             @Param("fromDate") LocalDate fromDate,

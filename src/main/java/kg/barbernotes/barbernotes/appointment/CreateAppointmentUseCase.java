@@ -38,7 +38,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -69,6 +68,13 @@ public class CreateAppointmentUseCase {
 
         int serviceLimit = rateLimitProperties.booking().maxServicesPerRecord();
 
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                request.getAppointmentDate(),
+                request.getStartTime()
+        );
+
+        LocalDateTime now = LocalDateTime.now(clock);
+
         if(request.getServiceIds().size() > serviceLimit){
             throw new BusinessRuleViolationException(
                     ErrorCode.INVALID_INPUT,
@@ -78,7 +84,7 @@ public class CreateAppointmentUseCase {
 
         String customerPhoneNumber = PhoneNormalizer.normalize(request.getCustomerPhoneNumber());
 
-        String number = PhoneNormalizer.phoneMask(customerPhoneNumber);
+        String number = PhoneNormalizer.mask(customerPhoneNumber);
 
         RateLimitDecision decision = rateLimiterService.check(
                 RateLimitGroup.PHONE,
@@ -111,9 +117,9 @@ public class CreateAppointmentUseCase {
                         );
             }
 
-            int appointmentCount = appointmentRepository.hasUpcomingCustomer(
+            long appointmentCount = appointmentRepository.countCustomerFutureAppointments(
                     customer.getId(), AppointmentStatus.CONFIRMED,
-                    LocalDate.now(clock), LocalTime.now(clock)
+                    now.toLocalDate(), now.toLocalTime()
             );
 
             int customerAppointmentLimit = rateLimitProperties.booking().maxActiveRecords();
@@ -121,7 +127,7 @@ public class CreateAppointmentUseCase {
             if(appointmentCount >= customerAppointmentLimit) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.CUSTOMER_APPOINTMENT_LIMIT_EXCEEDED,
-                        "На одного активного клиента не больше "
+                        "У клиента не может быть больше "
                         + customerAppointmentLimit + " активных записей"
                 );
             }
@@ -251,12 +257,6 @@ public class CreateAppointmentUseCase {
             );
         }
 
-        LocalDateTime appointmentDateTime = LocalDateTime.of(
-                request.getAppointmentDate(),
-                request.getStartTime()
-        );
-
-        LocalDateTime now = LocalDateTime.now(clock);
 
         if(appointmentDateTime.isBefore(now)){
             throw new BusinessRuleViolationException(
