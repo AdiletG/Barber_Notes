@@ -11,6 +11,7 @@ import kg.barbernotes.barbernotes.barber_service.BarberServiceEntity;
 import kg.barbernotes.barbernotes.barber_service.BarberServiceService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.config.BookingConfig;
 import kg.barbernotes.barbernotes.common.config.RateLimitProperties;
 import kg.barbernotes.barbernotes.common.enums.RateLimitGroup;
 import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
@@ -60,8 +61,7 @@ public class CreateAppointmentUseCase {
     private final Clock clock;
     private final RateLimiterService  rateLimiterService;
     private final RateLimitProperties rateLimitProperties;
-
-    private static final int BREAK_MINUTES = 15;
+    private final BookingConfig  bookingConfig;
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
@@ -178,7 +178,7 @@ public class CreateAppointmentUseCase {
 
         List<ServiceEntity> serviceEntities = new ArrayList<>();
 
-        int totalDurationMinutes = BREAK_MINUTES;
+        int totalDurationMinutes = bookingConfig.breakMinutes();
         BigDecimal totalPrice = BigDecimal.ZERO;
 
         Set<UUID> seen = new HashSet<>();
@@ -257,7 +257,6 @@ public class CreateAppointmentUseCase {
             );
         }
 
-
         if(appointmentDateTime.isBefore(now)){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
@@ -265,7 +264,10 @@ public class CreateAppointmentUseCase {
             );
         }
 
+        long appointmentNumber = System.currentTimeMillis();
+
         AppointmentEntity  appointmentEntity = new AppointmentEntity();
+        appointmentEntity.setAppointmentNumber(appointmentNumber);
         appointmentEntity.setCustomerEntity(customer);
         appointmentEntity.setBarberEntity(barberEntity);
         appointmentEntity.setBranchEntity(branchEntity);
@@ -279,15 +281,19 @@ public class CreateAppointmentUseCase {
         try {
             appointmentRepository.saveAndFlush(appointmentEntity);
         }catch (DataIntegrityViolationException e) {
+            log.error(
+                    "Failed to save appointment. Database error: {}",
+                    e.getMostSpecificCause().getMessage(),
+                    e
+            );
+
             throw new ScheduleConflictException(
                     ErrorCode.SCHEDULE_CONFLICT,
                     "Ошибка при создании записи"
             );
         }
 
-
         List<AppointmentServiceEntity> appointmentServiceEntities = new ArrayList<>();
-
 
         for(ServiceEntity serviceEntity : serviceEntities) {
             AppointmentServiceEntity appointmentService =  appointmentServiceMapper

@@ -6,6 +6,7 @@ import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
 import kg.barbernotes.barbernotes.barber.*;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.config.BookingConfig;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
@@ -39,6 +40,7 @@ public class WorkShiftService {
     private final AppointmentBookingService appointmentBookingService;
     private final CurrentUserProvider currentUserProvider;
     private final Clock clock;
+    private final BookingConfig bookingConfig;
 
 
     @Transactional(readOnly = true)
@@ -46,8 +48,6 @@ public class WorkShiftService {
         WorkShiftEntity workShift = getByBarberIdWorkDate(barberId, date);
         List<AppointmentEntity> appointments =
                 appointmentBookingService.getAppointmentByBarberIdAndDate(barberId, date);
-
-        final int STEP_MINUTES = 15;
 
         List<AvailableResponse> slots = new ArrayList<>();
 
@@ -67,10 +67,9 @@ public class WorkShiftService {
 
             slots.add(new AvailableResponse(date, slotStart, slotEnd, !busy));
 
-            slotStart = slotStart.plusMinutes(STEP_MINUTES);
+            slotStart = slotStart.plusMinutes(bookingConfig.slotStepMinutes());
 
         }
-
 
         return slots;
     }

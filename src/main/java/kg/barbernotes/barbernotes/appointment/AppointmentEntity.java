@@ -22,8 +22,7 @@ import java.util.List;
 
 public class AppointmentEntity extends AuditableEntity {
 
-    @Column(name = "appointment_number", insertable = false,
-            updatable = false, nullable = false, unique = true)
+    @Column(name = "appointment_number", nullable = false, unique = true)
     private Long appointmentNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
