@@ -7,11 +7,8 @@ import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceMapper;
 import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceRepository;
 import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.barber.BarberService;
-import kg.barbernotes.barbernotes.barber_service.BarberServiceEntity;
-import kg.barbernotes.barbernotes.barber_service.BarberServiceService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
-import kg.barbernotes.barbernotes.common.config.BookingConfig;
 import kg.barbernotes.barbernotes.common.config.RateLimitProperties;
 import kg.barbernotes.barbernotes.common.enums.RateLimitGroup;
 import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
@@ -26,9 +23,6 @@ import kg.barbernotes.barbernotes.common.exceptions.ScheduleConflictException;
 import kg.barbernotes.barbernotes.customer.CustomerEntity;
 import kg.barbernotes.barbernotes.customer.CustomerRepository;
 import kg.barbernotes.barbernotes.service.ServiceEntity;
-import kg.barbernotes.barbernotes.service.ServiceService;
-import kg.barbernotes.barbernotes.service_category.ServiceCategoryEntity;
-import kg.barbernotes.barbernotes.service_category.ServiceCategoryService;
 import kg.barbernotes.barbernotes.work_shift.WorkShiftEntity;
 import kg.barbernotes.barbernotes.work_shift.WorkShiftService;
 import lombok.RequiredArgsConstructor;
@@ -50,23 +44,18 @@ public class CreateAppointmentUseCase {
     private final CustomerRepository customerRepository;
     private final BarberService  barberService;
     private final BranchService branchService;
-    private final ServiceService  serviceService;
-    private final ServiceCategoryService  categoryService;
     private final AppointmentRepository appointmentRepository;
     private final AppointmentMapper appointmentMapper;
     private final AppointmentServiceMapper  appointmentServiceMapper;
     private final AppointmentServiceRepository  appointmentServiceRepository;
     private final WorkShiftService  workShiftService;
-    private final BarberServiceService barberServiceService;
     private final Clock clock;
     private final RateLimiterService  rateLimiterService;
     private final RateLimitProperties rateLimitProperties;
-    private final BookingConfig  bookingConfig;
+    private final BookingServiceResolver bookingServiceResolver;
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
-
-        int serviceLimit = rateLimitProperties.booking().maxServicesPerRecord();
 
         LocalDateTime appointmentDateTime = LocalDateTime.of(
                 request.getAppointmentDate(),
@@ -74,13 +63,6 @@ public class CreateAppointmentUseCase {
         );
 
         LocalDateTime now = LocalDateTime.now(clock);
-
-        if(request.getServiceIds().size() > serviceLimit){
-            throw new BusinessRuleViolationException(
-                    ErrorCode.INVALID_INPUT,
-                    "На одну запись максимум " + serviceLimit + " услуг"
-            );
-        }
 
         String customerPhoneNumber = PhoneNormalizer.normalize(request.getCustomerPhoneNumber());
 
@@ -176,59 +158,17 @@ public class CreateAppointmentUseCase {
 
         //Service
 
-        List<ServiceEntity> serviceEntities = new ArrayList<>();
+        bookingServiceResolver.validateCount(request.getServiceIds());
 
-        int totalDurationMinutes = bookingConfig.breakMinutes();
-        BigDecimal totalPrice = BigDecimal.ZERO;
-
-        Set<UUID> seen = new HashSet<>();
-
-        for (UUID serviceId : request.getServiceIds()) {
-            ServiceEntity serviceEntity = serviceService.getById(serviceId);
-
-            ServiceCategoryEntity category =
-                    categoryService.getById(serviceEntity.getServiceCategoryEntity().getId());
-
-            if(category.getStatus() != Status.ACTIVE){
-                throw new BusinessRuleViolationException(
-                        ErrorCode.CATEGORY_IS_INACTIVE,
-                        "Категория услуги НЕАКТИВНАЯ"
+        BookingServiceResolver.ResolvedServices resolved =
+                bookingServiceResolver.resolve(
+                        barberEntity.getId(),
+                        request.getServiceIds()
                 );
-            }
 
-            if(!seen.add(serviceId)){
-                throw new BusinessRuleViolationException(
-                        ErrorCode.BUSINESS_RULE_VIOLATION,
-                        "Услуга уже выбрана"
-                );
-            }
-
-            if(serviceEntity.getStatus() != Status.ACTIVE) {
-                throw new BusinessRuleViolationException(
-                        ErrorCode.BUSINESS_RULE_VIOLATION,
-                        "Статус сервиса НЕАКТИВЕН"
-                );
-            }
-
-            BarberServiceEntity barberServiceEntity =
-                    barberServiceService.getServiceByBarberId(barberEntity.getId(), serviceId);
-
-            if(barberServiceEntity.getStatus() != Status.ACTIVE ) {
-                throw new BusinessRuleViolationException(
-                        ErrorCode.BUSINESS_RULE_VIOLATION,
-                        "Статус сервиса у барбера НЕАКТИВЕН"
-                );
-            }
-
-            if (serviceEntity.getDurationMinutes() != null) {
-                totalDurationMinutes += serviceEntity.getDurationMinutes();
-            }
-
-            if (serviceEntity.getPrice() != null) {
-                totalPrice = totalPrice.add(serviceEntity.getPrice());
-            }
-            serviceEntities.add(serviceEntity);
-        }
+        int totalDurationMinutes = resolved.totalDurationMinutes();
+        BigDecimal totalPrice = resolved.totalPrice();
+        List<ServiceEntity> serviceEntities = resolved.serviceEntities();
 
         //Work Shift
         WorkShiftEntity workShift =
@@ -264,10 +204,8 @@ public class CreateAppointmentUseCase {
             );
         }
 
-        long appointmentNumber = System.currentTimeMillis();
 
         AppointmentEntity  appointmentEntity = new AppointmentEntity();
-        appointmentEntity.setAppointmentNumber(appointmentNumber);
         appointmentEntity.setCustomerEntity(customer);
         appointmentEntity.setBarberEntity(barberEntity);
         appointmentEntity.setBranchEntity(branchEntity);
@@ -281,7 +219,7 @@ public class CreateAppointmentUseCase {
         try {
             appointmentRepository.saveAndFlush(appointmentEntity);
         }catch (DataIntegrityViolationException e) {
-            log.error(
+            log.warn(
                     "Failed to save appointment. Database error: {}",
                     e.getMostSpecificCause().getMessage(),
                     e

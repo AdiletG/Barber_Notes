@@ -4,6 +4,7 @@ import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
 import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
 import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
 import kg.barbernotes.barbernotes.barber.*;
+import kg.barbernotes.barbernotes.barber_service.BarberServiceEntity;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.config.BookingConfig;
@@ -13,6 +14,11 @@ import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationExcepti
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
 import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
+import kg.barbernotes.barbernotes.service.ServiceEntity;
+import kg.barbernotes.barbernotes.service.ServiceService;
+import kg.barbernotes.barbernotes.service_category.ServiceCategoryEntity;
+import kg.barbernotes.barbernotes.service_category.ServiceCategoryService;
+import kg.barbernotes.barbernotes.work_shift.dto.AvailableRequest;
 import kg.barbernotes.barbernotes.work_shift.dto.AvailableResponse;
 import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftRequest;
 import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
@@ -41,13 +47,16 @@ public class WorkShiftService {
     private final CurrentUserProvider currentUserProvider;
     private final Clock clock;
     private final BookingConfig bookingConfig;
+    private final ServiceCategoryService categoryService;
+    private final ServiceService serviceService;
 
 
     @Transactional(readOnly = true)
-    public List<AvailableResponse> availableSlot(UUID barberId, LocalDate date, int durationMinutes) {
+    public List<AvailableResponse> availableSlot(UUID barberId, LocalDate date, int duration) {
         WorkShiftEntity workShift = getByBarberIdWorkDate(barberId, date);
         List<AppointmentEntity> appointments =
                 appointmentBookingService.getAppointmentByBarberIdAndDate(barberId, date);
+        int durationMinutes = 0;
 
         List<AvailableResponse> slots = new ArrayList<>();
 

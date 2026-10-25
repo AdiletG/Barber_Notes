@@ -20,10 +20,10 @@ public class WorkShiftController {
     private  final WorkShiftService workShiftService;
 
     @GetMapping("/api/v1/barbers/{barberId}/available-slots")
-    public List<AvailableResponse> getWorkShifts(
+    public List<AvailableResponse> getAvailableSlot(
             @PathVariable UUID barberId,
-            @RequestParam(required = false) LocalDate date,
-            @RequestParam(required = false) int durationMinutes
+            @RequestParam LocalDate date,
+            @RequestParam int durationMinutes
     ) {
         return workShiftService.availableSlot(
                 barberId, date, durationMinutes

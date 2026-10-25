@@ -17,6 +17,7 @@ databaseChangeLog:
                   type: BIGINT
                   generationType: ALWAYS
                   startWith: 100001
+                  autoIncrement: true
                   constraints:
                     nullable: false
                     unique: true
