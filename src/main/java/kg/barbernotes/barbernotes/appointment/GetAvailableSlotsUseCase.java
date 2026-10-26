@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -69,12 +70,14 @@ public class GetAvailableSlotsUseCase {
 
         int totalDurationMinutes = resolved.totalDurationMinutes();
 
-        List<WorkShiftEntity> workShifts =
-                workShiftService.findByBarberIdWorkDate(barberId, date).stream().toList();
+        Optional<WorkShiftEntity> workShiftOptional =
+                workShiftService.findByBarberIdWorkDate(barberId, date);
 
-        if (workShifts.isEmpty()) {
+        if (workShiftOptional.isEmpty()) {
             return List.of();
         }
+
+        WorkShiftEntity workShift = workShiftOptional.get();
 
         List<AppointmentEntity> appointments =
                 appointmentBookingService
@@ -85,15 +88,14 @@ public class GetAvailableSlotsUseCase {
         int slotStepMinutes = bookingConfig.slotStepMinutes();
         LocalTime currentTime = LocalTime.now(clock);
 
-        for (WorkShiftEntity shift : workShifts) {
 
             int shiftStartMinutes =
-                    shift.getStartTime().getHour() * 60
-                            + shift.getStartTime().getMinute();
+                    workShift.getStartTime().getHour() * 60
+                            + workShift.getStartTime().getMinute();
 
             int shiftEndMinutes =
-                    shift.getEndTime().getHour() * 60
-                            + shift.getEndTime().getMinute();
+                    workShift.getEndTime().getHour() * 60
+                            + workShift.getEndTime().getMinute();
 
             int slotStartMinutes = shiftStartMinutes;
 
@@ -151,7 +153,6 @@ public class GetAvailableSlotsUseCase {
 
                 slotStartMinutes += slotStepMinutes;
             }
-        }
 
         return slots;
     }
