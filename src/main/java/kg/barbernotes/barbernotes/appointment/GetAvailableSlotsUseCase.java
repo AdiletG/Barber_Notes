@@ -88,7 +88,6 @@ public class GetAvailableSlotsUseCase {
         int slotStepMinutes = bookingConfig.slotStepMinutes();
         LocalTime currentTime = LocalTime.now(clock);
 
-
             int shiftStartMinutes =
                     workShift.getStartTime().getHour() * 60
                             + workShift.getStartTime().getMinute();

@@ -20,6 +20,9 @@ public record RateLimitProperties(
         GroupProperties phone,
 
         @NotNull @Valid
+        GroupProperties slots,
+
+        @NotNull @Valid
         CacheProperties cache,
 
         @NotNull @Valid

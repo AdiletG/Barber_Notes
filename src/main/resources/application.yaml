@@ -52,6 +52,10 @@ app:
       capacity: 5
       refill-period: 2m
 
+    slots:
+      capacity: 30
+      refill-period: 2s
+
     cache:
       maximum-size: 200000
       idle-expiration: 20m

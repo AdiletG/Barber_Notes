@@ -68,6 +68,7 @@ public class RateLimiterService {
                 switch (key.group()) {
                     case IP -> properties.ip();
                     case PHONE -> properties.phone();
+                    case SLOTS -> properties.slots();
                 };
 
         return Bucket.builder()

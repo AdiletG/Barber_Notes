@@ -9,6 +9,7 @@ import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
@@ -22,6 +23,25 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final HandlerExceptionResolver resolver;
     private final RateLimiterService rateLimiterService;
+    private final static AntPathMatcher  MATCHER = new AntPathMatcher();
+
+    private RateLimitGroup getRateLimitGroup(HttpServletRequest request){
+        String method = request.getMethod();
+        String path = request.getServletPath();
+
+        if("POST".equalsIgnoreCase(method)
+        && "/api/v1/appointments".equals(path) ){
+            return RateLimitGroup.IP;
+        }
+
+        if("GET".equalsIgnoreCase(method)
+            && MATCHER.match("/api/v1/barbers/*/available-slots",  path)
+        ){
+            return RateLimitGroup.SLOTS;
+        }
+
+        return null;
+    }
 
     public RateLimitFilter(
             @Qualifier("handlerExceptionResolver")
@@ -34,8 +54,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"POST".equalsIgnoreCase(request.getMethod())
-                || !APPOINTMENTS_PATH.equals(request.getServletPath());
+        return getRateLimitGroup(request) == null;
     }
 
     @Override
@@ -44,6 +63,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException
     {
+        RateLimitGroup group = getRateLimitGroup(request);
+
         String remoteAddr = request.getRemoteAddr();
 
         if(remoteAddr == null || remoteAddr.isBlank()){
@@ -57,13 +78,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         RateLimitDecision decision = rateLimiterService.check(
-                RateLimitGroup.IP,
+                group,
                 remoteAddr
         );
 
         if(!decision.allowed()){
             log.warn(
-                    "Rate limit exceeded: ip={}, path={}, retryAfter={}s",
+                    "Rate limit exceeded: group={}, ip={}, path={}, retryAfter={}s",
+                    group,
                     remoteAddr,
                     request.getRequestURI(),
                     decision.retryAfterSeconds()
@@ -80,4 +102,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
+
 }
