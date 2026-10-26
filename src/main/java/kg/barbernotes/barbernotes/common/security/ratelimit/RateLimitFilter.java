@@ -20,6 +20,8 @@ import java.io.IOException;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
     private static final String APPOINTMENTS_PATH = "/api/v1/appointments";
+    private static final String SLOTS_PATH = "/api/v1/barbers/*/available-slots";
+
 
     private final HandlerExceptionResolver resolver;
     private final RateLimiterService rateLimiterService;
@@ -30,12 +32,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         if("POST".equalsIgnoreCase(method)
-        && "/api/v1/appointments".equals(path) ){
+        && APPOINTMENTS_PATH.equals(path) ){
             return RateLimitGroup.IP;
         }
 
-        if("GET".equalsIgnoreCase(method)
-            && MATCHER.match("/api/v1/barbers/*/available-slots",  path)
+        if(("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method))
+            && MATCHER.match(SLOTS_PATH,  path)
         ){
             return RateLimitGroup.SLOTS;
         }
