@@ -9,8 +9,10 @@ import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.barber.BarberService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.config.BookingConfig;
 import kg.barbernotes.barbernotes.common.config.RateLimitProperties;
 import kg.barbernotes.barbernotes.common.enums.RateLimitGroup;
+import kg.barbernotes.barbernotes.common.exceptions.BaseException;
 import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
 import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimitDecision;
 import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimiterService;
@@ -35,6 +37,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Slf4j
@@ -53,9 +56,12 @@ public class CreateAppointmentUseCase {
     private final RateLimiterService  rateLimiterService;
     private final RateLimitProperties rateLimitProperties;
     private final BookingServiceResolver bookingServiceResolver;
+    private final BookingConfig bookingConfig;
 
     @Transactional
     public AppointmentResponse execute(AppointmentCreateRequest request) {
+
+        bookingServiceResolver.validateCount(request.getServiceIds());
 
         LocalDateTime appointmentDateTime = LocalDateTime.of(
                 request.getAppointmentDate(),
@@ -158,8 +164,6 @@ public class CreateAppointmentUseCase {
 
         //Service
 
-        bookingServiceResolver.validateCount(request.getServiceIds());
-
         BookingServiceResolver.ResolvedServices resolved =
                 bookingServiceResolver.resolve(
                         barberEntity.getId(),
@@ -187,6 +191,30 @@ public class CreateAppointmentUseCase {
                     "В это время мастер не работает"
             );
         }
+
+
+        LocalTime shiftStart = workShift.getStartTime();
+        LocalTime appointmentStart = request.getStartTime();
+
+        int slotStepMinutes = bookingConfig.slotStepMinutes();
+
+        boolean hasSeconds =
+                appointmentStart.getSecond() != 0
+                        || appointmentStart.getNano() != 0;
+
+        long minutesFromShiftStart =
+                ChronoUnit.MINUTES.between(shiftStart, appointmentStart);
+
+        if (hasSeconds
+                || minutesFromShiftStart % slotStepMinutes != 0) {
+
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Время начала записи должно соответствовать шагу сетки "
+                            + slotStepMinutes + " минут"
+            );
+        }
+
 
         LocalTime endTime = request.getStartTime().plusMinutes(totalDurationMinutes);
 
@@ -221,8 +249,7 @@ public class CreateAppointmentUseCase {
         }catch (DataIntegrityViolationException e) {
             log.warn(
                     "Failed to save appointment. Database error: {}",
-                    e.getMostSpecificCause().getMessage(),
-                    e
+                    e.getMostSpecificCause().getMessage()
             );
 
             throw new ScheduleConflictException(

@@ -9,11 +9,14 @@ import kg.barbernotes.barbernotes.common.enums.Source;
 import kg.barbernotes.barbernotes.customer.CustomerEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+
 
 @Getter
 @Setter
@@ -22,7 +25,9 @@ import java.util.List;
 
 public class AppointmentEntity extends AuditableEntity {
 
-    @Column(name = "appointment_number", insertable=false, nullable = false, unique = true)
+    @Generated(event = EventType.INSERT)
+    @Column(name = "appointment_number", insertable=false,
+            updatable=false, nullable = false, unique = true)
     private Long appointmentNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
