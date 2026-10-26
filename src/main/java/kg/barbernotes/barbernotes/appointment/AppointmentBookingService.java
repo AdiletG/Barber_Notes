@@ -71,6 +71,13 @@ public class AppointmentBookingService {
     }
 
     @Transactional(readOnly = true)
+    public List<AppointmentEntity> getConfirmedByBarberIdAndDate(UUID barberId, LocalDate date){
+        return appointmentRepository.findByBarberEntity_IdAndAppointmentDateAndStatus(
+                barberId, date, AppointmentStatus.CONFIRMED
+        );
+    }
+
+    @Transactional(readOnly = true)
     public List<AppointmentEntity> getAppointmentByBarberIdAndDate(UUID barberId, LocalDate date) {
         return appointmentRepository
                 .findAppointmentEntitiesByBarberEntity_IdAndAppointmentDate(barberId, date);

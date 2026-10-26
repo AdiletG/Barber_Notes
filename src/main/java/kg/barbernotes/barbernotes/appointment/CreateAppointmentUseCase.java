@@ -12,7 +12,6 @@ import kg.barbernotes.barbernotes.branch.BranchService;
 import kg.barbernotes.barbernotes.common.config.BookingConfig;
 import kg.barbernotes.barbernotes.common.config.RateLimitProperties;
 import kg.barbernotes.barbernotes.common.enums.RateLimitGroup;
-import kg.barbernotes.barbernotes.common.exceptions.BaseException;
 import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
 import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimitDecision;
 import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimiterService;

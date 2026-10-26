@@ -13,6 +13,9 @@ import java.util.UUID;
 
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, UUID> {
 
+    List<AppointmentEntity> findByBarberEntity_IdAndAppointmentDateAndStatus
+            (UUID barberId, LocalDate date, AppointmentStatus status);
+
     @Query("""
         SELECT COUNT(a)
         FROM AppointmentEntity a

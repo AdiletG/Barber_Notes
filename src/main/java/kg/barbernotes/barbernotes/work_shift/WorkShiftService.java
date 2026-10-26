@@ -27,6 +27,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -40,40 +41,6 @@ public class WorkShiftService {
     private final AppointmentBookingService appointmentBookingService;
     private final CurrentUserProvider currentUserProvider;
     private final Clock clock;
-    private final BookingConfig bookingConfig;
-
-
-    @Transactional(readOnly = true)
-    public List<AvailableResponse> availableSlot(UUID barberId, LocalDate date, int duration) {
-        WorkShiftEntity workShift = getByBarberIdWorkDate(barberId, date);
-        List<AppointmentEntity> appointments =
-                appointmentBookingService.getAppointmentByBarberIdAndDate(barberId, date);
-        int durationMinutes = 0;
-
-        List<AvailableResponse> slots = new ArrayList<>();
-
-        LocalTime slotStart = workShift.getStartTime();
-        LocalTime wsEndTime = workShift.getEndTime();
-
-        while (!slotStart.plusMinutes(durationMinutes).isAfter(wsEndTime)) {
-            LocalTime slotEnd = slotStart.plusMinutes(durationMinutes);
-            final LocalTime start = slotStart;
-
-            boolean busy = appointments.stream().anyMatch(a -> {
-                LocalTime aStartTime = a.getStartTime();
-                LocalTime aEndTime = aStartTime.plusMinutes(a.getTotalDurationMinutes());
-
-                return start.isBefore(aEndTime) && aStartTime.isBefore(slotEnd);
-            });
-
-            slots.add(new AvailableResponse(date, slotStart, slotEnd, !busy));
-
-            slotStart = slotStart.plusMinutes(bookingConfig.slotStepMinutes());
-
-        }
-
-        return slots;
-    }
 
     @Transactional
     public WorkShiftResponse update(UUID workShiftId, WorkShiftRequest request) {
@@ -183,6 +150,11 @@ public class WorkShiftService {
         }
 
         workShiftRepository.delete(workShift);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<WorkShiftEntity> findByBarberIdWorkDate(UUID barberId, LocalDate date) {
+        return workShiftRepository.findByBarberEntity_IdAndWorkDate(barberId, date);
     }
 
     @Transactional(readOnly = true)

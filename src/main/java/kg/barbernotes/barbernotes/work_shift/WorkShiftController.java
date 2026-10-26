@@ -1,8 +1,7 @@
 package kg.barbernotes.barbernotes.work_shift;
 
 import jakarta.validation.Valid;
-import kg.barbernotes.barbernotes.common.enums.ErrorCode;
-import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
+import kg.barbernotes.barbernotes.appointment.GetAvailableSlotsUseCase;
 import kg.barbernotes.barbernotes.work_shift.dto.AvailableResponse;
 import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftRequest;
 import kg.barbernotes.barbernotes.work_shift.dto.WorkShiftResponse;
@@ -18,15 +17,16 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WorkShiftController {
     private  final WorkShiftService workShiftService;
+    private final GetAvailableSlotsUseCase getAvailableSlotsUseCase;
 
     @GetMapping("/api/v1/barbers/{barberId}/available-slots")
     public List<AvailableResponse> getAvailableSlot(
             @PathVariable UUID barberId,
             @RequestParam LocalDate date,
-            @RequestParam int durationMinutes
+            @RequestParam List<UUID> serviceIds
     ) {
-        return workShiftService.availableSlot(
-                barberId, date, durationMinutes
+        return getAvailableSlotsUseCase.execute(
+                barberId, date, serviceIds
         );
     }
 
