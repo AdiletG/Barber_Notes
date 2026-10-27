@@ -1,10 +1,7 @@
 package kg.barbernotes.barbernotes.common.config;
 
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import kg.barbernotes.barbernotes.common.enums.ErrorCode;
-import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -14,7 +11,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "app.cors")
 public record CorsProperties(
 
-        @NotEmpty @NotNull
+        @NotEmpty
         List<String> allowedOrigins,
 
         @Positive
@@ -23,15 +20,11 @@ public record CorsProperties(
 ) {
 
     public CorsProperties(List<String> allowedOrigins, long maxAgeSeconds) {
+        if(allowedOrigins == null || allowedOrigins.isEmpty()){
+            throw new IllegalArgumentException("AllowedOrigins не может быть равен null или пустым");
+        }
+
         for (String allowedOrigin : allowedOrigins) {
-
-            if(allowedOrigin == null || allowedOrigin.isEmpty()){
-                throw new BusinessRuleViolationException(
-                        ErrorCode.INVALID_INPUT,
-                        "AllowedOrigins must not be null or empty."
-                );
-            }
-
             if(allowedOrigin.equals("*")){
                 throw new IllegalArgumentException(
                         "allowed-origins нельзя указывать *"
