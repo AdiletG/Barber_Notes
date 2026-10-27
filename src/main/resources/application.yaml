@@ -68,3 +68,6 @@ app:
   booking:
       slot-step-minutes: 15
       break-minutes: 15
+
+  cors:
+    max-age-seconds: 3600

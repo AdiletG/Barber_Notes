@@ -10,3 +10,7 @@ logging:
   level:
     org.springframework.security: DEBUG
     kg.barbernotes.barbernotes: debug
+
+app:
+  cors:
+    allowed-origins: http://localhost:4200
