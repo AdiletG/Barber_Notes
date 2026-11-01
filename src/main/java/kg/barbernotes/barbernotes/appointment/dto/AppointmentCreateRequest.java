@@ -19,8 +19,8 @@ import java.util.UUID;
 public class AppointmentCreateRequest {
 
     @NotBlank(message = "Номер телефона обязателен")
-    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
-            message = PhoneNormalizer.phoneNormalizeErrorsText)
+    @Pattern(regexp = PhoneNormalizer.PHONE_RULES,
+            message = PhoneNormalizer.PHONE_ERROR_TEXT)
     private String customerPhoneNumber;
 
     @NotBlank(message = "ФИО клиента обязательное")

@@ -19,8 +19,8 @@ import java.util.UUID;
 public class StaffAccountCreateRequest {
 
     @NotBlank(message = "Номер телефона сотрудника обязателен")
-    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
-            message = PhoneNormalizer.phoneNormalizeErrorsText)
+    @Pattern(regexp = PhoneNormalizer.PHONE_RULES,
+            message = PhoneNormalizer.PHONE_ERROR_TEXT)
     private String phoneNumber;
 
     private UUID barberId;

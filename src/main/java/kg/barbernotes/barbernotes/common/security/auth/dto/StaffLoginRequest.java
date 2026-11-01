@@ -15,8 +15,8 @@ import lombok.NoArgsConstructor;
 public class StaffLoginRequest {
 
     @NotBlank(message = "Номер телефона сотрудника обязателен")
-    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
-            message = PhoneNormalizer.phoneNormalizeErrorsText)
+    @Pattern(regexp = PhoneNormalizer.PHONE_RULES,
+            message = PhoneNormalizer.PHONE_ERROR_TEXT)
     private String phoneNumber;
 
     @NotBlank(message = "Пароль обязателен")

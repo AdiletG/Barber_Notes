@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class CustomerOtpRequest {
 
     @NotBlank(message = "Номер телефона обязателен")
-    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
-            message = PhoneNormalizer.phoneNormalizeErrorsText)
+    @Pattern(regexp = PhoneNormalizer.PHONE_RULES,
+            message = PhoneNormalizer.PHONE_ERROR_TEXT)
     private String phoneNumber;
 }
