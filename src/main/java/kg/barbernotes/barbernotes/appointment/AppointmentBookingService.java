@@ -14,7 +14,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
@@ -25,12 +27,28 @@ public class AppointmentBookingService {
     private final AppointmentRepository appointmentRepository;
     private final AppointmentMapper appointmentMapper;
     private final CurrentUserProvider  currentUserProvider;
+    private final Clock clock;
 
     @Transactional
     public AppointmentResponse statusUpdate(UUID id, AppointmentStatusUpdateRequest request) {
         AppointmentEntity appointment = getById(id);
 
         checkCurrentUser(appointment);
+
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                appointment.getAppointmentDate(),
+                appointment.getStartTime()
+        );
+
+        LocalDateTime now = LocalDateTime.now(clock);
+
+        if((request.getStatus() == AppointmentStatus.COMPLETED || request.getStatus() == AppointmentStatus.NO_SHOW)
+                && appointmentDateTime.isAfter(now) ){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Нельзя отметить запись завершённой или неявкой до её начала"
+            );
+        }
 
         if(appointment.getStatus() == AppointmentStatus.CONFIRMED &&
                 (request.getStatus() == AppointmentStatus.COMPLETED ||
@@ -41,7 +59,7 @@ public class AppointmentBookingService {
         }else {
             throw new BusinessRuleViolationException(
                     ErrorCode.INVALID_STATUS_TRANSITION,
-                    "Не допустимое изменение статуса"
+                    "Недопустимое изменение статуса"
             );
         }
 

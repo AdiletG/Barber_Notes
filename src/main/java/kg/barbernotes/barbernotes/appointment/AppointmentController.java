@@ -7,6 +7,8 @@ import kg.barbernotes.barbernotes.appointment.dto.AppointmentStatusUpdateRequest
 import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,10 @@ public class AppointmentController {
     @GetMapping
     @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public PageResponse<AppointmentResponse> getAllAppointment(
+            @PageableDefault(
+                    sort = {"appointmentDate", "startTime"},
+                    direction = Sort.Direction.ASC
+            )
             Pageable pageable,
             @RequestParam(required = false) AppointmentStatus status,
             @RequestParam(required = false) UUID branchId,
