@@ -27,7 +27,7 @@ public class AppointmentController {
     @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public PageResponse<AppointmentResponse> getAllAppointment(
             @PageableDefault(
-                    sort = {"appointmentDate", "startTime"},
+                    sort = {"appointmentDate", "startTime", "appointmentNumber"},
                     direction = Sort.Direction.ASC
             )
             Pageable pageable,
