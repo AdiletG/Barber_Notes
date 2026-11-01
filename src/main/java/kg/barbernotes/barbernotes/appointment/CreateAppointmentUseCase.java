@@ -231,13 +231,6 @@ public class CreateAppointmentUseCase {
             );
         }
 
-        if(appointmentDateTime.isBefore(now)){
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Время записи не может быть в прошлом"
-            );
-        }
-
 
         AppointmentEntity  appointmentEntity = new AppointmentEntity();
         appointmentEntity.setCustomerEntity(customer);
