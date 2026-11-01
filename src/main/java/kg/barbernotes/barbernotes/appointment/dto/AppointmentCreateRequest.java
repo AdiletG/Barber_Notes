@@ -18,7 +18,7 @@ import java.util.UUID;
 public class AppointmentCreateRequest {
 
     @NotBlank(message = "Номер телефона обязателен")
-    @Pattern(regexp = "\\d{10,12}")
+    @Pattern(regexp = "\\d{10,12}", message = "Номер телефона должен содержать от 10 до 12 цифр")
     private String customerPhoneNumber;
 
     @NotBlank(message = "ФИО клиента обязательное")
@@ -32,10 +32,9 @@ public class AppointmentCreateRequest {
     private UUID branchId;
 
     @NotNull(message = "Дата записи обязательна")
-    @FutureOrPresent(message = "Дата не может быть в прошедшем времени")
     private LocalDate appointmentDate;
 
-    @NotNull(message = "Начало записи обязательна")
+    @NotNull(message = "Время начала записи обязательно")
     private LocalTime startTime;
 
     @NotEmpty(message = "Услуга обязательна")

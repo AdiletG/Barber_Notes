@@ -1,6 +1,5 @@
 package kg.barbernotes.barbernotes.work_shift.dto;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,13 +15,12 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class WorkShiftRequest {
 
-    @NotNull(message = "Дата должны быть указана")
-    @FutureOrPresent(message = "Дата не может быть прошедшем")
+    @NotNull(message = "Дата обязательна")
     private LocalDate workDate;
 
-    @NotNull(message = "Время начало работы обязательна")
+    @NotNull(message = "Время начала работы обязательно")
     private LocalTime startTime;
 
-    @NotNull(message = "Время конца работы обязательна")
+    @NotNull(message = "Время конца работы обязательно")
     private LocalTime endTime;
 }

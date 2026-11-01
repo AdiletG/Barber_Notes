@@ -69,6 +69,13 @@ public class CreateAppointmentUseCase {
 
         LocalDateTime now = LocalDateTime.now(clock);
 
+        if (appointmentDateTime.isBefore(now)) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Дата и время записи не могут быть в прошлом"
+            );
+        }
+
         String customerPhoneNumber = PhoneNormalizer.normalize(request.getCustomerPhoneNumber());
 
         String number = PhoneNormalizer.mask(customerPhoneNumber);

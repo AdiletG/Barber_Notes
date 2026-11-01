@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AppointmentStatusUpdateRequest {
 
-    @NotNull(message = "")
+    @NotNull(message = "Статус записи обязателен")
     private AppointmentStatus status;
 }

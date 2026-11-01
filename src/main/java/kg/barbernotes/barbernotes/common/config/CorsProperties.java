@@ -25,7 +25,14 @@ public record CorsProperties(
         }
 
         for (String allowedOrigin : allowedOrigins) {
-            if(allowedOrigin.equals("*")){
+
+            if(allowedOrigin == null || allowedOrigin.isEmpty()){
+                throw new IllegalArgumentException(
+                        "AllowedOrigin не может быть равен null или пустым"
+                );
+            }
+
+            if(allowedOrigin.contains("*")){
                 throw new IllegalArgumentException(
                         "allowed-origins нельзя указывать *"
                 );
