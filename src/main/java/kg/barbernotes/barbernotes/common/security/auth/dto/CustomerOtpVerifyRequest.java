@@ -2,11 +2,11 @@ package kg.barbernotes.barbernotes.common.security.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.stereotype.Service;
 
 @Getter
 @Setter
@@ -14,9 +14,10 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class CustomerOtpVerifyRequest {
     @NotBlank(message = "Номер телефона обязателен")
-    @Pattern(regexp = "\\d{10,15}")
+    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
+            message = PhoneNormalizer.phoneNormalizeErrorsText)
     private String phoneNumber;
 
-    @NotBlank
+    @NotBlank(message = "Код подтверждения обязателен")
     private String code;
 }

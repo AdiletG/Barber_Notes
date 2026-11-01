@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import kg.barbernotes.barbernotes.common.enums.StaffRole;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,8 @@ import java.util.UUID;
 public class StaffAccountCreateRequest {
 
     @NotBlank(message = "Номер телефона сотрудника обязателен")
-    @Pattern(regexp = "\\d{10,12}", message = "Номер телефона должен содержать от 10 до 12 цифр")
+    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
+            message = PhoneNormalizer.phoneNormalizeErrorsText)
     private String phoneNumber;
 
     private UUID barberId;

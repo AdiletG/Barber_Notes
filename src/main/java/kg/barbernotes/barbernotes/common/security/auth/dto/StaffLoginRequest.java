@@ -2,6 +2,7 @@ package kg.barbernotes.barbernotes.common.security.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,9 +15,10 @@ import lombok.NoArgsConstructor;
 public class StaffLoginRequest {
 
     @NotBlank(message = "Номер телефона сотрудника обязателен")
-    @Pattern(regexp = "\\d{10,15}")
+    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
+            message = PhoneNormalizer.phoneNormalizeErrorsText)
     private String phoneNumber;
 
-    @NotBlank
+    @NotBlank(message = "Пароль обязателен")
     private String password;
 }

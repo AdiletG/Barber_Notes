@@ -1,6 +1,7 @@
 package kg.barbernotes.barbernotes.barber.dto;
 
 import jakarta.validation.constraints.*;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +27,8 @@ public class BarberCreateRequest {
     private String lastName;
 
     @NotBlank(message = "Номер телефона сотрудника обязателен")
-    @Pattern(regexp = "\\d{10,12}")
+    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
+            message = PhoneNormalizer.phoneNormalizeErrorsText)
     private String phoneNumber;
 
     @NotNull(message = "Опыт работы сотрудника обязателен")

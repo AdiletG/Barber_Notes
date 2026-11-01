@@ -5,6 +5,11 @@ import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
 
 public final class PhoneNormalizer {
+    public final static String phoneNormalizeRules =
+            "\\d{9,12}";
+    public final static String phoneNormalizeErrorsText =
+            "Номер телефона должен состоять только из цифр: 12 с кодом 996, или 10 с ведущим 0, или 9 без кода";
+
     private PhoneNormalizer() {}
 
     public static String mask(String phone) {

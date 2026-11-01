@@ -182,7 +182,8 @@ public class CreateAppointmentUseCase {
 
         //Work Shift
         WorkShiftEntity workShift =
-                workShiftService.getByBarberIdWorkDate(barberEntity.getId(), request.getAppointmentDate());
+                workShiftService.getByBarberIdWorkDate(
+                        barberEntity.getId(), request.getAppointmentDate());
 
         if(workShift == null) {
             throw new BusinessRuleViolationException(

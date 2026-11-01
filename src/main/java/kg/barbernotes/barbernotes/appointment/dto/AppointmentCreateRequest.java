@@ -1,6 +1,7 @@
 package kg.barbernotes.barbernotes.appointment.dto;
 
 import jakarta.validation.constraints.*;
+import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,8 @@ import java.util.UUID;
 public class AppointmentCreateRequest {
 
     @NotBlank(message = "Номер телефона обязателен")
-    @Pattern(regexp = "\\d{10,12}", message = "Номер телефона должен содержать от 10 до 12 цифр")
+    @Pattern(regexp = PhoneNormalizer.phoneNormalizeRules,
+            message = PhoneNormalizer.phoneNormalizeErrorsText)
     private String customerPhoneNumber;
 
     @NotBlank(message = "ФИО клиента обязательное")
