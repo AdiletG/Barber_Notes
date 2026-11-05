@@ -4,6 +4,7 @@ import kg.barbernotes.barbernotes.barber.BarberEntity;
 import kg.barbernotes.barbernotes.barber.BarberService;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.config.FailedAttemptProperties;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
@@ -25,8 +26,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Service
@@ -40,6 +41,9 @@ public class StaffAccountService {
     private final BranchService branchService;
     private final CurrentUserProvider currentUserProvider;
     private final RefreshTokenService refreshTokenService;
+    private final FailedAttemptProperties failedAttemptProperties;
+
+    private final Clock clock;
 
 
     @Transactional
@@ -234,35 +238,39 @@ public class StaffAccountService {
 
     @Transactional
     public void recordSuccessfulLogin(UUID staffAccountId){
-        StaffAccountEntity accountEntity = repository.findById(staffAccountId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.STAFF_NOT_FOUND,
-                        "Сотрудник не найден"
-                ));
+        OffsetDateTime now = OffsetDateTime.now(clock);
 
-        accountEntity.setFailedLoginAttempts(0);
-        accountEntity.setLockedUntil(null);
-        accountEntity.setLastLoginAt(OffsetDateTime.now(ZoneOffset.UTC));
+        int success = repository.successfulAttempt(
+                staffAccountId,
+                now
+        );
 
-        repository.save(accountEntity);
+        if(success == 0){
+            throw  new EntityNotFoundException(
+                    ErrorCode.STAFF_NOT_FOUND,
+                    "Сотрудник не найден"
+            );
+        }
     }
 
     @Transactional
     public void recordFailedAttempt(UUID staffAccountId){
-        StaffAccountEntity accountEntity = repository.findById(staffAccountId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        ErrorCode.STAFF_NOT_FOUND,
-                        "Сотрудник не найден"
-                ));
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        OffsetDateTime lockTime = now.plus(failedAttemptProperties.lockTime());
 
-        accountEntity.setFailedLoginAttempts(accountEntity.getFailedLoginAttempts() + 1);
+        int lock = repository.unsuccessfulAttempt(
+                staffAccountId,
+                        failedAttemptProperties.limit(),
+                        now,
+                        lockTime
+                );
 
-        if(accountEntity.getFailedLoginAttempts() >= 5) {
-            accountEntity.setFailedLoginAttempts(0);
-            accountEntity.setLockedUntil(OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(15));
+        if(lock == 0){
+             throw  new EntityNotFoundException(
+                    ErrorCode.STAFF_NOT_FOUND,
+                    "Сотрудник не найден"
+            );
         }
-
-        repository.save(accountEntity);
     }
 
     @Transactional(readOnly = true)

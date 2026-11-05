@@ -71,3 +71,7 @@ app:
 
   cors:
     max-age-seconds: 3600
+
+  failed-attempt:
+    limit: 5
+    lockTime: 15m

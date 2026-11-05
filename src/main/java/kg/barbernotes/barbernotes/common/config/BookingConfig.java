@@ -12,7 +12,4 @@ public record BookingConfig(
 
         @Positive
         int breakMinutes
-) {
-
-
-}
+) {}
