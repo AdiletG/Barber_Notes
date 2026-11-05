@@ -38,8 +38,13 @@ public class TelegramContactHandler {
                     code
             );
         }catch (EntityNotFoundException | CustomAuthenticationException e){
-            sendHandler.removeKeyboard(chatId,
-                    "К сожалению клиента под таким номером не существует");
+            if (e instanceof EntityNotFoundException) {
+                sendHandler.removeKeyboard(chatId,
+                        "Клиента с таким номером нет. Сначала запишитесь на приём, потом возвращайтесь за кодом");
+            } else {
+                sendHandler.removeKeyboard(chatId,
+                        "Вход по этому номеру сейчас недоступен. Обратитесь в салон.», клавиатура тоже убирается");
+            }
         }catch (BusinessRuleViolationException e){
             sendHandler.removeKeyboard(chatId,
                     "Код уже был отправлен недавно, подождите несколько минут и попробуйте снова");

@@ -44,7 +44,6 @@ public class TelegramDispatcher {
                         : null;
 
                 if (contactUserId == null
-                        || senderUserId == null
                         || !contactUserId.equals(senderUserId)) {
                     sendHandler.sendMessage(
                             chatId,
@@ -61,36 +60,30 @@ public class TelegramDispatcher {
 
             if (message.hasText()) {
 
-                String text = message.getText().trim();
+                String text = message.getText()
+                        .strip()
+                        .split("\\s+", 2)[0]
+                        .toLowerCase();
 
-                switch (text) {
-                    case "/start" -> {
-
-                        sendHandler.sendMessage(update.getMessage().getChatId(),
-                                "Добро пожаловать!!!");
+                if (text.equals("/start")) {
+                    sendHandler.sendMessage(update.getMessage().getChatId(),
+                            "Добро пожаловать!!!");
 
 
-                        sendHandler.sendMessage(update.getMessage().getChatId(),
-                                "Просьба отправить контакт для проверки и дальнейшей отправки ОТП");
+                    sendHandler.sendMessage(update.getMessage().getChatId(),
+                            "Просьба отправить контакт для проверки и дальнейшей отправки ОТП");
 
-                        List<List<String>> register = List.of(
-                                List.of("Отправить контакт")
-                        );
+                    List<List<String>> register = List.of(
+                            List.of("Отправить контакт")
+                    );
 
-                        sendHandler.sendKeyboardRequestContact(chatId,
-                                "Пожалуйста, нажмите на кнопку ниже, чтобы поделиться контактом.", register);
+                    sendHandler.sendKeyboardRequestContact(chatId,
+                            "Пожалуйста, нажмите на кнопку ниже, чтобы поделиться контактом.", register);
+                } else {
+                    sendHandler.sendMessage(update.getMessage().getChatId(),
+                            "Не понятная команда для бота");
 
-                    }
-
-                    case "/stop" -> {
-                    }
-
-                    default -> {
-                        sendHandler.sendMessage(update.getMessage().getChatId(),
-                                "Не понятная команда для бота");
-
-                        sendHandler.sendKeyboard(chatId, "Просьба выбрать команду из списка ниже", menu());
-                    }
+                    sendHandler.sendKeyboard(chatId, "Просьба выбрать команду из списка ниже", menu());
                 }
 
                 return;
@@ -104,13 +97,11 @@ public class TelegramDispatcher {
         }catch (Exception e){
             log.error(
                     "Ошибка при обработке Telegram update. updateId={}",
-                    update != null ? update.getUpdateId() : null,
+                    update.getUpdateId(),
                     e
             );
 
-            if (update == null
-                    || !update.hasMessage()
-                    || update.getMessage() == null) {
+            if (!update.hasMessage() || update.getMessage() == null) {
                 return;
             }
 
@@ -133,8 +124,7 @@ public class TelegramDispatcher {
 
     private List<List<String>> menu(){
        return List.of(
-                List.of("/start"),
-                List.of("/stop")
+                List.of("/start")
         );
 
     }
