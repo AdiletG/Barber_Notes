@@ -26,8 +26,10 @@ public record RateLimitProperties(
         CacheProperties cache,
 
         @NotNull @Valid
-        BookingProperties booking
+        BookingProperties booking,
 
+        @NotNull @Valid
+        GroupProperties auth
 
 ) {
 

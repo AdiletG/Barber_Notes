@@ -65,6 +65,10 @@ app:
       max-services-per-record: 5
       admin-active-records-limit: 100
 
+    auth:
+      capacity: 10
+      refill-period: 30s
+
   booking:
       slot-step-minutes: 15
       break-minutes: 15
