@@ -39,8 +39,6 @@ public class AuthService {
     private final PasswordEncoder  passwordEncoder;
     private final Clock clock;
 
-    private static final String DUMMY_HASH = "$2a$10$VO2oYtJe..LwFVW8g0YqveKHQUFBKKBymVrsvgglAK1PqICHz1mDO";
-
     public AuthResult customerOtpLogin(String phoneNumber, String rawCode) {
         String customerPhoneNumber = PhoneNormalizer.normalize(phoneNumber);
         CustomerEntity customer = customerService.getByPhoneNumber(customerPhoneNumber);
@@ -140,15 +138,16 @@ public class AuthService {
 
     public AuthResult staffLogin(String phoneNumber, String rawPassword){
         String staffAccountPhoneNumber = PhoneNormalizer.normalize(phoneNumber);
-        StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(staffAccountPhoneNumber);
+        String dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
 
-        if(staffAccount == null){
-            passwordEncoder.matches(rawPassword, DUMMY_HASH);
-            throw new CustomAuthenticationException(
-                    ErrorCode.INVALID_CREDENTIALS,
-                    "Неверный телефон или пароль"
-            );
-        }
+        StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(staffAccountPhoneNumber)
+                .orElseThrow(() -> {
+                    passwordEncoder.matches(rawPassword, dummyHash);
+                    return new CustomAuthenticationException(
+                            ErrorCode.INVALID_CREDENTIALS,
+                            "Неверный телефон или пароль"
+                    );
+                });
 
         if(staffAccount.getLockedUntil() != null &&
                 staffAccount.getLockedUntil().isAfter(OffsetDateTime.now(clock))){
@@ -159,7 +158,7 @@ public class AuthService {
         }
 
         if(staffAccount.getStatus() != Status.ACTIVE){
-            passwordEncoder.matches(rawPassword, DUMMY_HASH);
+            passwordEncoder.matches(rawPassword, dummyHash);
             throw new CustomAuthenticationException(
                     ErrorCode.INVALID_CREDENTIALS,
                     "Неверный телефон или пароль"

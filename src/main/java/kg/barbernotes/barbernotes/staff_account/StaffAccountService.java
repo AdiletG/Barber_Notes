@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -273,7 +274,7 @@ public class StaffAccountService {
     }
 
     @Transactional(readOnly = true)
-    public StaffAccountEntity getStaffAccount(String phoneNumber){
+    public Optional<StaffAccountEntity> getStaffAccount(String phoneNumber){
         return repository.findByPhoneNumber(phoneNumber);
     }
 
