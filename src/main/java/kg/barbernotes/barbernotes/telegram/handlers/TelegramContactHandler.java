@@ -28,14 +28,11 @@ public class TelegramContactHandler {
             sendHandler.sendMessage(chatId,
                     "Добро пожаловать " + customerEntity.getFirstName()
             );
-            sendHandler.sendMessage(chatId,
-                    "Отправляем ОТП"
-            );
 
             String code = authService.requestCustomerOtp(phoneNumber);
 
             sendHandler.sendMessage(chatId,
-                    code
+                    "Ваш ОТП: " + code
             );
         }catch (EntityNotFoundException | CustomAuthenticationException e){
             if (e instanceof EntityNotFoundException) {
@@ -43,7 +40,7 @@ public class TelegramContactHandler {
                         "Клиента с таким номером нет. Сначала запишитесь на приём, потом возвращайтесь за кодом");
             } else {
                 sendHandler.removeKeyboard(chatId,
-                        "Вход по этому номеру сейчас недоступен. Обратитесь в салон.», клавиатура тоже убирается");
+                        "Вход по этому номеру сейчас недоступен. Обратитесь в салон.");
             }
         }catch (BusinessRuleViolationException e){
             sendHandler.removeKeyboard(chatId,
