@@ -44,5 +44,5 @@ public interface StaffAccountRepository extends JpaRepository<StaffAccountEntity
 
     boolean existsByPhoneNumber(String phoneNumber);
     boolean existsByBarberEntity_Id(UUID id);
-    Optional<StaffAccountEntity> findByPhoneNumber(String phoneNumber);
+    StaffAccountEntity findByPhoneNumber(String phoneNumber);
 }

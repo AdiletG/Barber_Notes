@@ -42,9 +42,7 @@ public class StaffAccountService {
     private final CurrentUserProvider currentUserProvider;
     private final RefreshTokenService refreshTokenService;
     private final FailedAttemptProperties failedAttemptProperties;
-
     private final Clock clock;
-
 
     @Transactional
     public StaffAccountResponse statusUpdate(UUID id, StatusUpdateRequest request){
@@ -276,11 +274,7 @@ public class StaffAccountService {
 
     @Transactional(readOnly = true)
     public StaffAccountEntity getStaffAccount(String phoneNumber){
-        return repository.findByPhoneNumber(phoneNumber)
-                .orElseThrow(() -> new CustomAuthenticationException(
-                        ErrorCode.INVALID_CREDENTIALS,
-                        "Неверный телефон или пароль"
-                ));
+        return repository.findByPhoneNumber(phoneNumber);
     }
 
 }
