@@ -38,7 +38,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService  refreshTokenService;
     private final PasswordEncoder  passwordEncoder;
-
+    private final Clock clock;
 
     public AuthResult customerOtpLogin(String phoneNumber, String rawCode) {
         String customerPhoneNumber = PhoneNormalizer.normalize(phoneNumber);
@@ -142,7 +142,7 @@ public class AuthService {
         StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(staffAccountPhoneNumber);
 
         if(staffAccount.getLockedUntil() != null &&
-                staffAccount.getLockedUntil().isAfter(OffsetDateTime.now(ZoneOffset.UTC))){
+                staffAccount.getLockedUntil().isAfter(OffsetDateTime.now(clock))){
             throw new CustomAuthenticationException(
                     ErrorCode.ACCOUNT_IS_TEMPORARILY_BLOCKED,
                     "Аккаунт временно заблокирован, попробуйте позже"

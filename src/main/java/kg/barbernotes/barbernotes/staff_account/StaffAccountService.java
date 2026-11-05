@@ -257,12 +257,13 @@ public class StaffAccountService {
     public void recordFailedAttempt(UUID staffAccountId){
         OffsetDateTime now = OffsetDateTime.now(clock);
         OffsetDateTime lockTime = now.plus(failedAttemptProperties.lockTime());
+        int limit = failedAttemptProperties.limit();
 
         int lock = repository.unsuccessfulAttempt(
                 staffAccountId,
-                        failedAttemptProperties.limit(),
-                        now,
-                        lockTime
+                        limit,
+                        lockTime,
+                        now
                 );
 
         if(lock == 0){
