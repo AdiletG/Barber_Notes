@@ -21,8 +21,8 @@ import java.io.IOException;
 public class RateLimitFilter extends OncePerRequestFilter {
     private static final String APPOINTMENTS_PATH = "/api/v1/appointments";
     private static final String SLOTS_PATH = "/api/v1/barbers/*/available-slots";
-    private static final String STAFF_LOGIN_PATH = "api/v1/auth/staff-login";
-    private static final String CUSTOMER_OTP_VERIFY_PATH = "api/v1/auth/customer/otp/verify";
+    private static final String STAFF_LOGIN_PATH = "/api/v1/auth/staff-login";
+    private static final String CUSTOMER_OTP_VERIFY_PATH = "/api/v1/auth/customer/otp/verify";
 
 
     private final HandlerExceptionResolver resolver;
@@ -34,11 +34,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         if("POST".equalsIgnoreCase(method)
-        && (
-                APPOINTMENTS_PATH.equals(path)
-                        || STAFF_LOGIN_PATH.equals(path)
-                        || CUSTOMER_OTP_VERIFY_PATH.equals(path)
-        )){
+        && APPOINTMENTS_PATH.equals(path)){
             return RateLimitGroup.IP;
         }
 
@@ -46,6 +42,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             && MATCHER.match(SLOTS_PATH,  path)
         ){
             return RateLimitGroup.SLOTS;
+        }
+
+        if("POST".equalsIgnoreCase(method)
+                && (STAFF_LOGIN_PATH.equals(path)
+                || CUSTOMER_OTP_VERIFY_PATH.equals(path))){
+            return RateLimitGroup.AUTH;
         }
 
         return null;
