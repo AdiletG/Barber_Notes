@@ -1,5 +1,6 @@
 package kg.barbernotes.barbernotes.common.security.auth;
 
+import jakarta.annotation.PostConstruct;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.StaffRole;
@@ -38,6 +39,8 @@ public class AuthService {
     private final RefreshTokenService  refreshTokenService;
     private final PasswordEncoder  passwordEncoder;
     private final Clock clock;
+
+    private String dummyHash;
 
     public AuthResult customerOtpLogin(String phoneNumber, String rawCode) {
         String customerPhoneNumber = PhoneNormalizer.normalize(phoneNumber);
@@ -138,8 +141,6 @@ public class AuthService {
 
     public AuthResult staffLogin(String phoneNumber, String rawPassword){
         String staffAccountPhoneNumber = PhoneNormalizer.normalize(phoneNumber);
-        String dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
-
         StaffAccountEntity staffAccount = staffAccountService.getStaffAccount(staffAccountPhoneNumber)
                 .orElseThrow(() -> {
                     passwordEncoder.matches(rawPassword, dummyHash);
@@ -213,5 +214,10 @@ public class AuthService {
 
         extraClaims.put(JwtClaimNames.MUST_CHANGE_PASSWORD, staffAccount.getMustChangePassword());
         return extraClaims;
+    }
+
+    @PostConstruct
+    private void dummyHash(){
+      dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 }
