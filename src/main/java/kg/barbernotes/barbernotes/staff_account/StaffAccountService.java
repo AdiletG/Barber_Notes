@@ -50,9 +50,11 @@ public class StaffAccountService {
         StaffAccountEntity staffAccount = getById(id);
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        checkCurrenUser(staffAccount, currentUser);
+        checkCurrentUser(staffAccount, currentUser);
 
-        if(currentUser.isSuperAdmin() && staffAccount.getRole().equals(StaffRole.SUPER_ADMIN)) {
+        if(currentUser.isSuperAdmin()
+                && staffAccount.getRole().equals(StaffRole.SUPER_ADMIN)
+                && request.getStatus().equals(Status.INACTIVE)) {
             long superAdminCount = repository.countByRoleAndStatusAndIdNot(StaffRole.SUPER_ADMIN, Status.ACTIVE, id);
             if(superAdminCount == 0){
                 throw new BusinessRuleViolationException(
@@ -91,7 +93,7 @@ public class StaffAccountService {
         {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Администратор филиала не может создать другого Супер Администратора"
+                    "Администратор филиала не может создать другого Супер Администратора или Супер Администратора"
             );
         }
 
@@ -268,7 +270,7 @@ public class StaffAccountService {
         return repository.findByPhoneNumber(phoneNumber);
     }
 
-    private void checkCurrenUser(StaffAccountEntity staffAccount, AuthenticatedUser currentUser){
+    private void checkCurrentUser(StaffAccountEntity staffAccount, AuthenticatedUser currentUser){
 
         if(staffAccount.getId().equals(currentUser.subjectId())){
             throw new BusinessRuleViolationException(

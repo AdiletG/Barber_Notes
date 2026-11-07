@@ -47,7 +47,9 @@ public class PublicEndpointPolicy {
         private boolean matches(HttpServletRequest request) {
             boolean methodMatches =
                     method == null
-                            || method.equalsIgnoreCase(request.getMethod());
+                            || method.equalsIgnoreCase(request.getMethod())
+                            || method.equalsIgnoreCase("GET") && request.getMethod().equals("HEAD");
+
 
             return methodMatches
                     && matchesPath(request.getServletPath());
