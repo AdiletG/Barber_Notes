@@ -1,16 +1,18 @@
 package kg.barbernotes.barbernotes.staff_account;
 
+import kg.barbernotes.barbernotes.common.enums.StaffRole;
+import kg.barbernotes.barbernotes.common.enums.Status;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface StaffAccountRepository extends JpaRepository<StaffAccountEntity, UUID> {
 
+    long countByRoleAndStatusAndIdNot(StaffRole role, Status status, UUID id);
     @Modifying(clearAutomatically = true,  flushAutomatically = true)
     @Query("""
     update StaffAccountEntity s

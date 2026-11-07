@@ -50,26 +50,16 @@ public class StaffAccountService {
         StaffAccountEntity staffAccount = getById(id);
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if(staffAccount.getId().equals(currentUser.subjectId())){
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Нельзя менять статус собственного аккаунта"
-            );
-        }
+        checkCurrenUser(staffAccount, currentUser);
 
-        if(currentUser.isBranchAdmin() && !staffAccount.getRole().equals(StaffRole.BARBER)) {
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Редактировать статус аккаунта Админа может только супер Админ"
-            );
-        }
-
-        if(currentUser.isBranchAdmin() &&
-                !currentUser.belongsToBranch(staffAccount.getBranchEntity().getId())){
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Редактировать статус аккаунта барбера могут только Админы филиала к которому барбер привязан"
-            );
+        if(currentUser.isSuperAdmin() && staffAccount.getRole().equals(StaffRole.SUPER_ADMIN)) {
+            long superAdminCount = repository.countByRoleAndStatusAndIdNot(StaffRole.SUPER_ADMIN, Status.ACTIVE, id);
+            if(superAdminCount == 0){
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Нельзя деактивировать последнего активного Супер Админа"
+                );
+            }
         }
 
         if(staffAccount.getStatus().equals(Status.ACTIVE) && request.getStatus().equals(Status.INACTIVE)){
@@ -101,7 +91,7 @@ public class StaffAccountService {
         {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Администратор филиала не может создать другого Администратора"
+                    "Администратор филиала не может создать другого Супер Администратора"
             );
         }
 
@@ -276,6 +266,31 @@ public class StaffAccountService {
     @Transactional(readOnly = true)
     public Optional<StaffAccountEntity> getStaffAccount(String phoneNumber){
         return repository.findByPhoneNumber(phoneNumber);
+    }
+
+    private void checkCurrenUser(StaffAccountEntity staffAccount, AuthenticatedUser currentUser){
+
+        if(staffAccount.getId().equals(currentUser.subjectId())){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Нельзя менять статус собственного аккаунта"
+            );
+        }
+
+        if(currentUser.isBranchAdmin() && !staffAccount.getRole().equals(StaffRole.BARBER)) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Редактировать статус аккаунта Админа может только супер Админ"
+            );
+        }
+
+        if(currentUser.isBranchAdmin() &&
+                !currentUser.belongsToBranch(staffAccount.getBranchEntity().getId())){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Редактировать статус аккаунта барбера могут только Админы филиала к которому барбер привязан"
+            );
+        }
     }
 
 }
