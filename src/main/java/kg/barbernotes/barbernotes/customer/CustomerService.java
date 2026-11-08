@@ -68,7 +68,6 @@ public class CustomerService {
                         ErrorCode.CUSTOMER_NOT_FOUND,
                         "Пользователь не найден"
                 ));
-
     }
 
     @Transactional(readOnly = true)

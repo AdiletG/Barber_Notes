@@ -2,7 +2,6 @@ package kg.barbernotes.barbernotes.common.security.auth;
 
 import jakarta.annotation.PostConstruct;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
-import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.StaffRole;
@@ -75,8 +74,8 @@ public class AuthService {
 
             if(customerEntity.getStatus() != Status.ACTIVE) {
                 throw new CustomAuthenticationException(
-                        ErrorCode.OTP_NOT_FOUND,
-                        "Такого кода не существует"
+                        ErrorCode.CUSTOMER_NOT_FOUND,
+                        "Пользователь не найден"
                 );
             }
 
