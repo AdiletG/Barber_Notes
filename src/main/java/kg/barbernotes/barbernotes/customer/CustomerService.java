@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -56,12 +57,18 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<CustomerEntity> findByPhoneNumber(String phoneNumber){
+        return customerRepository.findByPhoneNumber(phoneNumber);
+    }
+
+    @Transactional(readOnly = true)
     public CustomerEntity getByPhoneNumber(String phoneNumber){
         return customerRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ErrorCode.CUSTOMER_NOT_FOUND,
                         "Пользователь не найден"
                 ));
+
     }
 
     @Transactional(readOnly = true)

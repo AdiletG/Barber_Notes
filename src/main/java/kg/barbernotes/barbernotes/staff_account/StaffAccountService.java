@@ -93,7 +93,7 @@ public class StaffAccountService {
         {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Администратор филиала не может создать другого Супер Администратора или Супер Администратора"
+                    "Администратор филиала не может создать другого Администратора филиала или Супер Администратора"
             );
         }
 
