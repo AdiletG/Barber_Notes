@@ -13,6 +13,8 @@ import kg.barbernotes.barbernotes.common.config.BookingConfig;
 import kg.barbernotes.barbernotes.common.config.RateLimitProperties;
 import kg.barbernotes.barbernotes.common.enums.RateLimitGroup;
 import kg.barbernotes.barbernotes.common.exceptions.RateLimitException;
+import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
+import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
 import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimitDecision;
 import kg.barbernotes.barbernotes.common.security.ratelimit.RateLimiterService;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
@@ -29,6 +31,7 @@ import kg.barbernotes.barbernotes.work_shift.WorkShiftService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,9 +59,45 @@ public class CreateAppointmentUseCase {
     private final RateLimitProperties rateLimitProperties;
     private final BookingServiceResolver bookingServiceResolver;
     private final BookingConfig bookingConfig;
+    private final CurrentUserProvider currentUserProvider;
+
+
 
     @Transactional
-    public AppointmentResponse execute(AppointmentCreateRequest request) {
+    public AppointmentResponse executeByAdmin(AppointmentCreateRequest request){
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        if(!currentUser.belongsToBranch(request.getBranchId())){
+            throw new AccessDeniedException(
+                    "Администратор может создавать записи только в своём филиале"
+            );
+        }
+
+        int appointmentLimit = rateLimitProperties.booking().maxActiveRecordsAdmin();
+
+        return execute(
+                request,
+                Source.ADMIN,
+                appointmentLimit
+        );
+    }
+
+    @Transactional
+    public AppointmentResponse execute(AppointmentCreateRequest request){
+        int appointmentLimit = rateLimitProperties.booking().maxActiveRecords();
+
+        return execute(
+                request,
+                Source.ONLINE,
+                appointmentLimit
+        );
+    }
+
+    private AppointmentResponse execute(
+            AppointmentCreateRequest request,
+            Source source,
+            int appointmentLimit
+            ) {
 
         bookingServiceResolver.validateCount(request.getServiceIds());
 
@@ -116,13 +155,11 @@ public class CreateAppointmentUseCase {
                     now.toLocalDate(), now.toLocalTime()
             );
 
-            int customerAppointmentLimit = rateLimitProperties.booking().maxActiveRecords();
-
-            if(appointmentCount >= customerAppointmentLimit) {
+            if(appointmentCount >= appointmentLimit) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.CUSTOMER_APPOINTMENT_LIMIT_EXCEEDED,
                         "У клиента не может быть больше "
-                        + customerAppointmentLimit + " активных записей"
+                        + appointmentLimit + " активных записей"
                 );
             }
 
@@ -137,7 +174,7 @@ public class CreateAppointmentUseCase {
             customer = new CustomerEntity();
             customer.setFirstName(request.getCustomerName());
             customer.setPhoneNumber(customerPhoneNumber);
-            customer.setCreatedFrom(Source.ONLINE);
+            customer.setCreatedFrom(source);
             customer.setStatus(Status.ACTIVE);
             customerRepository.save(customer);
         }
@@ -242,7 +279,7 @@ public class CreateAppointmentUseCase {
         appointmentEntity.setTotalPrice(totalPrice);
         appointmentEntity.setTotalDurationMinutes(totalDurationMinutes);
         appointmentEntity.setStatus(AppointmentStatus.CONFIRMED);
-        appointmentEntity.setSource(Source.ONLINE);
+        appointmentEntity.setSource(source);
 
         try {
             appointmentRepository.saveAndFlush(appointmentEntity);
@@ -273,4 +310,5 @@ public class CreateAppointmentUseCase {
 
         return appointmentMapper.toResponse(appointmentEntity);
     }
+
 }

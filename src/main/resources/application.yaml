@@ -62,6 +62,7 @@ app:
 
     booking:
       max-active-records: 2
+      max-active-records-admin: 5
       max-services-per-record: 5
       admin-active-records-limit: 100
 

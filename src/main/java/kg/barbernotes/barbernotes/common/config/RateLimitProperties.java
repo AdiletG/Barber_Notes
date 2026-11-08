@@ -63,6 +63,7 @@ public record RateLimitProperties(
 
     public record BookingProperties(
             @Positive int maxActiveRecords,
+            @Positive int maxActiveRecordsAdmin,
             @Positive int maxServicesPerRecord,
             @Positive int adminActiveRecordsLimit
     ) {

@@ -57,6 +57,14 @@ public class AppointmentController {
 
     }
 
+    @PostMapping("/admin")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
+    public AppointmentResponse createAppointmentByAdmin(
+            @Valid @RequestBody AppointmentCreateRequest request
+    ){
+        return createAppointmentUseCase.executeByAdmin(request);
+    }
+
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public AppointmentResponse updateAppointmentStatus(
