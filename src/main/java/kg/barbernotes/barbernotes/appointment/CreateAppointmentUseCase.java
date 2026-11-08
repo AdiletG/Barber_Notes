@@ -126,7 +126,7 @@ public class CreateAppointmentUseCase {
 
         if(!decision.allowed()){
             log.warn(
-                    "Rate limit exceeded: client PHONE ={}, retryAfter ={}",
+                    "Rate limit exceeded: client PHONE = {}, retryAfter = {}",
                     number, decision.retryAfterSeconds()
             );
 
@@ -146,7 +146,7 @@ public class CreateAppointmentUseCase {
             if(customer.getStatus() != Status.ACTIVE) {
                 throw new BusinessRuleViolationException(
                         ErrorCode.BUSINESS_RULE_VIOLATION,
-                        "Статус клиента неактивен либо заблокирован "
+                        "Статус клиента неактивен либо заблокирован."
                         );
             }
 

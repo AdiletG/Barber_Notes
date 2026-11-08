@@ -58,6 +58,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/admin")
+    @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     public AppointmentResponse createAppointmentByAdmin(
             @Valid @RequestBody AppointmentCreateRequest request
