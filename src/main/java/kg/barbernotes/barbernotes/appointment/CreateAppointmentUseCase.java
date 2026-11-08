@@ -67,7 +67,7 @@ public class CreateAppointmentUseCase {
     public AppointmentResponse executeByAdmin(AppointmentCreateRequest request){
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if(!currentUser.belongsToBranch(request.getBranchId())){
+        if(currentUser.isBranchAdmin() && !currentUser.belongsToBranch(request.getBranchId())){
             throw new AccessDeniedException(
                     "Администратор может создавать записи только в своём филиале"
             );
