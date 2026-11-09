@@ -1,11 +1,18 @@
 package kg.barbernotes.barbernotes.customer;
 
+import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
+import kg.barbernotes.barbernotes.appointment.AppointmentEntity;
+import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
+import kg.barbernotes.barbernotes.appointment.dto.AppointmentResponse;
 import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.ErrorCode;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import kg.barbernotes.barbernotes.common.enums.SubjectType;
 import kg.barbernotes.barbernotes.common.exceptions.BusinessRuleViolationException;
+import kg.barbernotes.barbernotes.common.exceptions.CustomAuthenticationException;
 import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
+import kg.barbernotes.barbernotes.common.security.auth.AuthenticatedUser;
+import kg.barbernotes.barbernotes.common.security.auth.CurrentUserProvider;
 import kg.barbernotes.barbernotes.common.security.jwt.RefreshTokenService;
 import kg.barbernotes.barbernotes.customer.dto.CustomerResponse;
 import kg.barbernotes.barbernotes.customer.dto.CustomerUpdateRequest;
@@ -15,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +32,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
     private final RefreshTokenService  refreshTokenService;
+    private final CurrentUserProvider currentUserProvider;
 
     @Transactional
     public CustomerResponse update(UUID id, CustomerUpdateRequest request){
@@ -54,6 +63,23 @@ public class CustomerService {
             );
         }
         return customerMapper.toResponse(customer);
+    }
+
+    @Transactional(readOnly = true)
+    public CustomerEntity getCurrentCustomer(){
+        CustomerEntity customer =
+                customerRepository.findById(currentUserProvider.getCurrentUser().subjectId())
+                        .orElseThrow(() -> new CustomAuthenticationException(
+                                ErrorCode.CUSTOMER_NOT_FOUND,
+                                "Пользователь не найден"
+                        ));
+        if(customer.getStatus() != Status.ACTIVE){
+            throw  new CustomAuthenticationException(
+                    ErrorCode.CUSTOMER_NOT_FOUND,
+                    "Пользователь не найден"
+            );
+        }
+        return customer;
     }
 
     @Transactional(readOnly = true)

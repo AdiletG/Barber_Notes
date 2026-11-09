@@ -12,8 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomerUpdateRequest {
-
-    @NotBlank(message = "")
-    @Size(max = 100)
+    @NotBlank(message = "Имя не может быть пустым")
+    @Size(max = 100, message = "Имя не должно превышать 100 символов")
     private String firstName;
 }

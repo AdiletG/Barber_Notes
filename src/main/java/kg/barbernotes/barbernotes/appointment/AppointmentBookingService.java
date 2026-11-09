@@ -30,6 +30,39 @@ public class AppointmentBookingService {
     private final Clock clock;
 
     @Transactional
+    public void cancelByCustomer(UUID customerId, UUID appointmentId){
+        AppointmentEntity appointment = appointmentRepository
+                .findOwnById(customerId, appointmentId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        "Запись не найдена"
+                ));
+
+        if(appointment.getStatus() != AppointmentStatus.CONFIRMED){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.INVALID_STATUS_TRANSITION,
+                    "Недопустимое изменение статуса"
+            );
+        }
+
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                appointment.getAppointmentDate(),
+                appointment.getStartTime()
+        );
+
+        if (!appointmentDateTime.isAfter(LocalDateTime.now(clock))) {
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Нельзя отменить запись, которая уже началась"
+            );
+        }
+
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointmentRepository.save(appointment);
+
+    }
+
+    @Transactional
     public AppointmentResponse statusUpdate(UUID id, AppointmentStatusUpdateRequest request) {
         AppointmentEntity appointment = getById(id);
 
@@ -63,9 +96,32 @@ public class AppointmentBookingService {
             );
         }
 
+        return appointmentMapper.toResponse(appointment) ;
+    }
+
+
+    @Transactional(readOnly = true)
+    public AppointmentResponse findOwnById(UUID customerId, UUID appointmentId) {
+
+        AppointmentEntity appointment = appointmentRepository
+                .findOwnById(customerId, appointmentId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        "Запись не найдена"
+                ));
+
         return appointmentMapper.toResponse(appointment);
     }
 
+    @Transactional(readOnly = true)
+    public Page<AppointmentResponse> findAllForCustomer(
+            UUID customerId, AppointmentStatus status,
+            LocalDate dateFrom, LocalDate dateTo, Pageable pageable
+    ){
+        return appointmentRepository.findAllWithFilters(
+                status, null, null, customerId, dateFrom, dateTo, pageable
+        ).map(appointmentMapper::toResponse);
+    }
 
     @Transactional(readOnly = true)
     public boolean hasUpcomingBranch(UUID branchId,

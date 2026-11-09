@@ -14,7 +14,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomerResponse {
-
     private UUID id;
     private String firstName;
     private String phoneNumber;
