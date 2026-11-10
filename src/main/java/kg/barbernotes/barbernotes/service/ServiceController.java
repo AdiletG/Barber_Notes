@@ -9,6 +9,8 @@ import kg.barbernotes.barbernotes.service.dto.ServiceResponse;
 import kg.barbernotes.barbernotes.service.dto.ServiceUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,10 @@ public class ServiceController {
 
     @GetMapping
     public PageResponse<ServiceResponse> findAll(
+            @PageableDefault(
+                    sort = {"name"},
+                    direction = Sort.Direction.DESC
+            )
             Pageable pageable,
             @RequestParam(required = false) Status status,
             @RequestParam(required = false) UUID categoryId,

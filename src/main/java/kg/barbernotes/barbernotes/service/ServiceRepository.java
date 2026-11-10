@@ -43,9 +43,6 @@ public interface ServiceRepository extends JpaRepository<ServiceEntity, UUID> {
 
 
     boolean existsByServiceCategoryEntity_Id(UUID id);
-    Page<ServiceEntity> findAllByStatus(Status status, Pageable pageable);
-    Page<ServiceEntity> findByServiceCategoryEntity_Id(UUID categoryId, Pageable pageable);
-    Page<ServiceEntity> findByServiceCategoryEntity_IdAndStatus(UUID categoryId, Status status, Pageable pageable);
     List<ServiceEntity> findByServiceCategoryEntity_IdAndStatus(UUID categoryId, Status status);
 
     boolean existsByName(String name);
