@@ -25,17 +25,10 @@ public class ServiceController {
     public PageResponse<ServiceResponse> findAll(
             Pageable pageable,
             @RequestParam(required = false) Status status,
-            @RequestParam(required = false) UUID categoryId
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID branchId
             ){
-        if(status == null && categoryId == null){
-            return PageResponse.of(serviceService.findAll(pageable));
-        }else if(status == null){
-            return PageResponse.of(serviceService.findAllByCategoryId(categoryId, pageable));
-        }else if(categoryId == null){
-            return PageResponse.of(serviceService.findAllByStatus(status, pageable));
-        }else {
-            return PageResponse.of(serviceService.findPageCategoryAndStatus(categoryId, status, pageable));
-        }
+        return PageResponse.of(serviceService.findAllWithFilters(status, categoryId, branchId, pageable));
     }
 
     @GetMapping("/{id}")

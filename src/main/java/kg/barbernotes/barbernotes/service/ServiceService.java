@@ -117,6 +117,15 @@ public class ServiceService {
         return serviceMapper.toResponse(service);
     }
 
+
+    @Transactional(readOnly = true)
+    public Page<ServiceResponse> findAllWithFilters(
+            Status status, UUID categoryId, UUID branchId, Pageable pageable
+    ){
+        return serviceRepository.findAllFilters(status, categoryId, branchId, pageable)
+                .map(serviceMapper::toResponse);
+    }
+
     @Transactional(readOnly = true)
     public ServiceEntity getById(UUID id) {
         return serviceRepository.findById(id)
@@ -144,29 +153,5 @@ public class ServiceService {
                 .map(serviceMapper::toResponse)
                 .toList();
     }
-    
-    @Transactional(readOnly = true)
-    public Page<ServiceResponse> findPageCategoryAndStatus(UUID categoryId, Status status, Pageable pageable) {
-        return serviceRepository.findByServiceCategoryEntity_IdAndStatus(categoryId,status, pageable)
-                .map(serviceMapper::toResponse);
-    }
 
-    @Transactional(readOnly = true)
-    public Page<ServiceResponse> findAll(Pageable pageable) {
-        return serviceRepository.findAll(pageable)
-                .map(serviceMapper::toResponse);
-    }
-
-
-    @Transactional(readOnly = true)
-    public Page<ServiceResponse> findAllByStatus(Status status, Pageable pageable) {
-        return serviceRepository.findAllByStatus(status, pageable)
-                .map(serviceMapper::toResponse);
-    }
-    
-    @Transactional(readOnly = true)
-    public Page<ServiceResponse> findAllByCategoryId(UUID categoryId, Pageable pageable) {
-        return serviceRepository.findByServiceCategoryEntity_Id(categoryId, pageable)
-                .map(serviceMapper::toResponse);
-    }
 }
