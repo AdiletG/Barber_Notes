@@ -1,6 +1,5 @@
 package kg.barbernotes.barbernotes.appointment;
 
-import kg.barbernotes.barbernotes.appointment.dto.AppointmentResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

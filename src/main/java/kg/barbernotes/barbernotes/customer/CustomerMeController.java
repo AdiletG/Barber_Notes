@@ -3,6 +3,8 @@ import jakarta.validation.Valid;
 import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
 import kg.barbernotes.barbernotes.appointment.AppointmentStatus;
 import kg.barbernotes.barbernotes.appointment.dto.AppointmentResponse;
+import kg.barbernotes.barbernotes.appointment_service.AppointmentServiceService;
+import kg.barbernotes.barbernotes.appointment_service.dto.AppointmentServiceResponse;
 import kg.barbernotes.barbernotes.common.dto.PageResponse;
 import kg.barbernotes.barbernotes.customer.dto.CustomerResponse;
 import kg.barbernotes.barbernotes.customer.dto.CustomerUpdateRequest;
@@ -15,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -24,17 +27,18 @@ import java.util.UUID;
 public class CustomerMeController {
     private final CustomerService customerService;
     private final AppointmentBookingService appointmentBookingService;
+    private final AppointmentServiceService appointmentServiceService;
 
     @GetMapping
     public CustomerResponse getMe() {
-        return customerService.findById(currenCustomer().getId());
+        return customerService.findById(currentCustomer().getId());
     }
 
     @GetMapping("/appointments")
     public PageResponse<AppointmentResponse> getAppointments(
             @PageableDefault(
                     sort = {"appointmentDate", "startTime", "appointmentNumber"},
-                    direction = Sort.Direction.ASC
+                    direction = Sort.Direction.DESC
             )
             Pageable pageable,
             @RequestParam(required = false) AppointmentStatus status,
@@ -42,32 +46,41 @@ public class CustomerMeController {
             @RequestParam(required = false) LocalDate dateTo
     ) {
        return PageResponse.of(appointmentBookingService.findAllForCustomer(
-                currenCustomer().getId(), status, dateFrom, dateTo, pageable
+                currentCustomer().getId(), status, dateFrom, dateTo, pageable
         ));
     }
 
     @GetMapping("/appointments/{appointmentId}")
     public AppointmentResponse getAppointmentById(@PathVariable UUID appointmentId) {
-        return appointmentBookingService.findOwnById(currenCustomer().getId(), appointmentId);
+        return appointmentBookingService.findOwnById(currentCustomer().getId(), appointmentId);
+    }
+
+    @GetMapping("appointments/{appointmentId}/services")
+    public List<AppointmentServiceResponse> getServices(@PathVariable UUID appointmentId) {
+        AppointmentResponse appointmentResponse =
+                appointmentBookingService.findOwnById(currentCustomer().getId(), appointmentId);
+
+        return appointmentServiceService.findByAppointmentId(appointmentResponse.getId())
+                .stream().toList();
     }
 
     @PutMapping
     public CustomerResponse updateMe(
             @Valid @RequestBody CustomerUpdateRequest request) {
         return customerService.update(
-                currenCustomer().getId(),
+                currentCustomer().getId(),
                 request
         );
     }
 
     @PostMapping("appointments/{appointmentId}/cancel")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancelAppointment(@PathVariable UUID appointmentId) {
-        appointmentBookingService.cancelByCustomer(currenCustomer().getId(), appointmentId);
+    @ResponseStatus(HttpStatus.OK)
+    public AppointmentResponse cancelAppointment(@PathVariable UUID appointmentId) {
+       return appointmentBookingService.cancelByCustomer(currentCustomer().getId(), appointmentId);
     }
 
 
-    private CustomerEntity currenCustomer(){
+    private CustomerEntity currentCustomer(){
         return customerService.getCurrentCustomer();
     }
 }

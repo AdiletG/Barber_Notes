@@ -30,7 +30,7 @@ public class AppointmentBookingService {
     private final Clock clock;
 
     @Transactional
-    public void cancelByCustomer(UUID customerId, UUID appointmentId){
+    public AppointmentResponse cancelByCustomer(UUID customerId, UUID appointmentId){
         AppointmentEntity appointment = appointmentRepository
                 .findOwnById(customerId, appointmentId)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -60,6 +60,7 @@ public class AppointmentBookingService {
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointmentRepository.save(appointment);
 
+        return appointmentMapper.toResponse(appointment);
     }
 
     @Transactional
