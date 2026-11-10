@@ -91,9 +91,15 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    public CustomerResponse findById() {
+        return customerMapper.toResponse(getCurrentCustomer());
+    }
+
+    @Transactional(readOnly = true)
     public CustomerResponse findById(UUID id) {
         return customerMapper.toResponse(getById(id));
     }
+
 
     @Transactional(readOnly = true)
     public CustomerEntity getById(UUID id) {

@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +30,7 @@ public class CustomerMeController {
 
     @GetMapping
     public CustomerResponse getMe() {
-        return customerService.findById(currentCustomer().getId());
+        return customerService.findById();
     }
 
     @GetMapping("/appointments")
@@ -60,8 +59,7 @@ public class CustomerMeController {
         AppointmentResponse appointmentResponse =
                 appointmentBookingService.findOwnById(currentCustomer().getId(), appointmentId);
 
-        return appointmentServiceService.findByAppointmentId(appointmentResponse.getId())
-                .stream().toList();
+        return appointmentServiceService.findByAppointmentId(appointmentResponse.getId());
     }
 
     @PutMapping
@@ -74,7 +72,6 @@ public class CustomerMeController {
     }
 
     @PostMapping("appointments/{appointmentId}/cancel")
-    @ResponseStatus(HttpStatus.OK)
     public AppointmentResponse cancelAppointment(@PathVariable UUID appointmentId) {
        return appointmentBookingService.cancelByCustomer(currentCustomer().getId(), appointmentId);
     }
