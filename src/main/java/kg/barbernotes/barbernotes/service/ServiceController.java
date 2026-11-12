@@ -27,7 +27,7 @@ public class ServiceController {
     public PageResponse<ServiceResponse> findAll(
             @PageableDefault(
                     sort = {"name"},
-                    direction = Sort.Direction.DESC
+                    direction = Sort.Direction.ASC
             )
             Pageable pageable,
             @RequestParam(required = false) Status status,

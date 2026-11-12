@@ -40,9 +40,6 @@ public interface ServiceRepository extends JpaRepository<ServiceEntity, UUID> {
             Pageable pageable
     );
 
-
-
-    boolean existsByServiceCategoryEntity_Id(UUID id);
     List<ServiceEntity> findByServiceCategoryEntity_IdAndStatus(UUID categoryId, Status status);
 
     boolean existsByName(String name);

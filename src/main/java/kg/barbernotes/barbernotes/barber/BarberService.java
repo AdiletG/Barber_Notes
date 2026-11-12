@@ -7,6 +7,7 @@ import kg.barbernotes.barbernotes.barber.dto.BarberResponse;
 import kg.barbernotes.barbernotes.barber.dto.BarberUpdateRequest;
 import kg.barbernotes.barbernotes.branch.BranchEntity;
 import kg.barbernotes.barbernotes.branch.BranchService;
+import kg.barbernotes.barbernotes.common.config.RateLimitProperties;
 import kg.barbernotes.barbernotes.common.enums.DeactivationReason;
 import kg.barbernotes.barbernotes.common.event.BranchActivatedEvent;
 import kg.barbernotes.barbernotes.common.util.PhoneNormalizer;
@@ -29,8 +30,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +41,7 @@ public class BarberService {
     private final CurrentUserProvider currentUserProvider;
     private final AppointmentBookingService appointmentBookingService;
     private final Clock clock;
+    private final RateLimitProperties rateLimitProperties;
 
 
     @Transactional
@@ -192,27 +193,40 @@ public class BarberService {
     }
 
     @Transactional(readOnly = true)
-    public Page<BarberResponse> findByBranchIdAndStatus(UUID branchId, Status status, Pageable pageable) {
-        return barberRepository.findByBranchEntity_IdAndStatus(branchId, status, pageable)
-                .map(barberMapper::toResponse);
-    }
+    public Page<BarberResponse> findAllWithFilters(
+            UUID branchId, Status status, List<UUID> serviceIds, Pageable pageable
+    ){
+        if(serviceIds == null || serviceIds.isEmpty()) {
+            return barberRepository.findByBranchEntity_IdAndStatus(branchId, status, pageable)
+                    .map(barberMapper::toResponse);
+        }
 
-    @Transactional(readOnly = true)
-    public Page<BarberResponse> findByBranchId(UUID branchId, Pageable pageable) {
-        return barberRepository.findByBranchEntity_Id(branchId, pageable)
-                .map(barberMapper::toResponse);
-    }
+        int maxServices =
+                rateLimitProperties.booking().maxServicesPerRecord();
 
-    @Transactional(readOnly = true)
-    public Page<BarberResponse> findAllByStatus(Status status, Pageable pageable) {
-        return barberRepository.findAllByStatus(status, pageable)
-                .map(barberMapper::toResponse);
-    }
+        if (serviceIds.size() > maxServices) {
 
-    @Transactional(readOnly = true)
-    public Page<BarberResponse> findAll(Pageable pageable) {
-        return barberRepository.findAll(pageable)
-                .map(barberMapper::toResponse);
+            throw new BusinessRuleViolationException(
+                    ErrorCode.INVALID_INPUT,
+                    "На одну запись можно выбрать от 1 до "
+                            + maxServices + " услуг"
+            );
+        }
+
+        List<UUID> uniqueServiceIds = serviceIds.stream()
+                .distinct()
+                .toList();
+
+        long serviceCount = uniqueServiceIds.size();
+
+        return barberRepository.findAllWithServices(
+                        branchId,
+                        status,
+                        uniqueServiceIds,
+                        serviceCount,
+                        Status.ACTIVE,
+                        pageable
+                ).map(barberMapper::toResponse);
     }
 
     private void checkCurrentUser(BarberEntity barber) {
@@ -227,4 +241,5 @@ public class BarberService {
             );
         }
     }
+
 }

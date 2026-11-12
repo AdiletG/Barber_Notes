@@ -9,10 +9,13 @@ import kg.barbernotes.barbernotes.common.dto.StatusUpdateRequest;
 import kg.barbernotes.barbernotes.common.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,20 +25,16 @@ public class BarberController {
     private final BarberService barberService;
 
     @GetMapping
-    public PageResponse<BarberResponse> findAll(
+    public PageResponse<BarberResponse> findAllWithFilters(
+            @PageableDefault(
+                    direction = Sort.Direction.ASC
+            )
             Pageable pageable,
             @RequestParam(required = false) UUID branchId,
-            @RequestParam(required = false) Status status
-    ){
-        if(status == null && branchId == null){
-            return PageResponse.of(barberService.findAll(pageable));
-        }else if(branchId == null){
-            return PageResponse.of(barberService.findAllByStatus(status, pageable));
-        } else if (status == null) {
-            return PageResponse.of(barberService.findByBranchId(branchId, pageable));
-        }else {
-            return PageResponse.of(barberService.findByBranchIdAndStatus(branchId, status, pageable));
-        }
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) List<UUID> serviceIds
+            ){
+       return PageResponse.of(barberService.findAllWithFilters(branchId, status, serviceIds, pageable));
     }
 
     @GetMapping("/{id}")

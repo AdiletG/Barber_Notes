@@ -1,8 +1,6 @@
 package kg.barbernotes.barbernotes.barber_service;
 
 import kg.barbernotes.barbernotes.common.enums.Status;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
