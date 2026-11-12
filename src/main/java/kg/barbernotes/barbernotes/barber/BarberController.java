@@ -27,6 +27,7 @@ public class BarberController {
     @GetMapping
     public PageResponse<BarberResponse> findAllWithFilters(
             @PageableDefault(
+                    sort = {"firstName", "lastName"},
                     direction = Sort.Direction.ASC
             )
             Pageable pageable,

@@ -30,7 +30,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -197,7 +198,7 @@ public class BarberService {
             UUID branchId, Status status, List<UUID> serviceIds, Pageable pageable
     ){
         if(serviceIds == null || serviceIds.isEmpty()) {
-            return barberRepository.findByBranchEntity_IdAndStatus(branchId, status, pageable)
+            return barberRepository.findByBranchIdAndStatus(branchId, status, pageable)
                     .map(barberMapper::toResponse);
         }
 

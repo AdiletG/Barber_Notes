@@ -40,7 +40,15 @@ public interface BarberRepository extends JpaRepository<BarberEntity, UUID> {
             Pageable pageable
     );
 
-    Page<BarberEntity> findByBranchEntity_IdAndStatus(UUID branchEntityId, Status status,  Pageable pageable);
+    @Query("""
+        select b from BarberEntity b
+        where (:branchId IS NULL OR b.branchEntity.id = :branchId)
+        and(:status IS NULL OR b.status = :status)
+        """)
+    Page<BarberEntity> findByBranchIdAndStatus(
+            @Param("branchId") UUID branchId,
+            @Param("status") Status status,
+            Pageable pageable);
 
     boolean existsByPhoneNumber(String phoneNumber);
 
