@@ -120,9 +120,9 @@ public class ServiceService {
 
     @Transactional(readOnly = true)
     public Page<ServiceResponse> findAllWithFilters(
-            Status status, UUID categoryId, UUID branchId, Pageable pageable
+            Status status, UUID categoryId, UUID branchId, UUID barberId,Pageable pageable
     ){
-        return serviceRepository.findAllFilters(status, categoryId, branchId, pageable)
+        return serviceRepository.findAllFilters(status, categoryId, branchId, barberId, Status.ACTIVE, pageable)
                 .map(serviceMapper::toResponse);
     }
 

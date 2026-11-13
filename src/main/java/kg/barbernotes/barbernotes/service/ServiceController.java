@@ -32,9 +32,10 @@ public class ServiceController {
             Pageable pageable,
             @RequestParam(required = false) Status status,
             @RequestParam(required = false) UUID categoryId,
-            @RequestParam(required = false) UUID branchId
+            @RequestParam(required = false) UUID branchId,
+            @RequestParam(required = false) UUID barberId
             ){
-        return PageResponse.of(serviceService.findAllWithFilters(status, categoryId, branchId, pageable));
+        return PageResponse.of(serviceService.findAllWithFilters(status, categoryId, branchId, barberId, pageable));
     }
 
     @GetMapping("/{id}")
