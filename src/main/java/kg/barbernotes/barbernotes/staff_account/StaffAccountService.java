@@ -53,13 +53,6 @@ public class StaffAccountService {
         StaffAccountEntity staffAccount = getById(id);
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        if(staffAccount.getStatus() != Status.ACTIVE){
-            throw new BusinessRuleViolationException(
-                    ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Учетная запись должна быть АКТИВНА"
-            );
-        }
-
         checkCurrentUser(
                 staffAccount,
                 currentUser,
@@ -67,6 +60,13 @@ public class StaffAccountService {
                 "Сбрасывать пароль аккаунта Админа может только супер Админ",
                 "Сбрасывать пароль аккаунта барбера могут только Админы филиала к которому барбер привязан"
         );
+
+        if(staffAccount.getStatus() != Status.ACTIVE){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Учетная запись должна быть АКТИВНА"
+            );
+        }
 
         String temporaryPassword = passwordGenerator.generatePassword();
 
@@ -323,21 +323,21 @@ public class StaffAccountService {
     private void checkCurrentUser(
             StaffAccountEntity staffAccount,
             AuthenticatedUser currentUser,
-            String firstRule,
-            String secondRule,
-            String thirdRule){
+            String selfMessage,
+            String notBarberMessage,
+            String otherBranchMessage){
 
         if(staffAccount.getId().equals(currentUser.subjectId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    firstRule
+                    selfMessage
             );
         }
 
         if(currentUser.isBranchAdmin() && !staffAccount.getRole().equals(StaffRole.BARBER)) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    secondRule
+                    notBarberMessage
             );
         }
 
@@ -345,7 +345,7 @@ public class StaffAccountService {
                 !currentUser.belongsToBranch(staffAccount.getBranchEntity().getId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    thirdRule
+                    otherBranchMessage
             );
         }
     }
