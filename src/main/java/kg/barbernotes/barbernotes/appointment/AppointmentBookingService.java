@@ -101,10 +101,9 @@ public class AppointmentBookingService {
     }
 
     @Transactional(readOnly = true)
-    public AppointmentResponse checkAccessById(UUID id){
+    public void checkAccessById(UUID id){
         AppointmentEntity appointment = getById(id);
         checkCurrentUser(appointment);
-        return appointmentMapper.toResponse(appointment);
     }
 
     @Transactional(readOnly = true)
@@ -195,8 +194,6 @@ public class AppointmentBookingService {
         } else if (currentUser.isBranchAdmin()) {
             branchId = currentUser.branchId();
         }
-
-
 
         return appointmentRepository.findAllWithFilters(
                 status, branchId, barberId, customerId, dateFrom, dateTo, pageable

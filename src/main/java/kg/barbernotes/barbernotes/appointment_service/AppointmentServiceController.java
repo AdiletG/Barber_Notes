@@ -2,8 +2,6 @@ package kg.barbernotes.barbernotes.appointment_service;
 
 import kg.barbernotes.barbernotes.appointment.AppointmentBookingService;
 import kg.barbernotes.barbernotes.appointment_service.dto.AppointmentServiceResponse;
-import kg.barbernotes.barbernotes.common.enums.ErrorCode;
-import kg.barbernotes.barbernotes.common.exceptions.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
