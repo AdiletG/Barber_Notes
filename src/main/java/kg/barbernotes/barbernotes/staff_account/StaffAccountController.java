@@ -18,6 +18,13 @@ import java.util.UUID;
 public class StaffAccountController {
     private final StaffAccountService staffAccountService;
 
+    @PostMapping("/{id}/reset-password")
+    @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public StaffAccountCreateResponse resetPassword(@PathVariable UUID id) {
+        return staffAccountService.resetPassword(id);
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('BRANCH_ADMIN', 'SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)

@@ -22,6 +22,7 @@ import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountCreateRequest;
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountCreateResponse;
 import kg.barbernotes.barbernotes.staff_account.dto.StaffAccountResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StaffAccountService {
     private final StaffAccountRepository repository;
     private final StaffAccountMapper mapper;
@@ -45,12 +47,61 @@ public class StaffAccountService {
     private final FailedAttemptProperties failedAttemptProperties;
     private final Clock clock;
 
+
+    @Transactional
+    public StaffAccountCreateResponse resetPassword(UUID id) {
+        StaffAccountEntity staffAccount = getById(id);
+        AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
+
+        if(staffAccount.getStatus() != Status.ACTIVE){
+            throw new BusinessRuleViolationException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "Учетная запись должна быть АКТИВНА"
+            );
+        }
+
+        checkCurrentUser(
+                staffAccount,
+                currentUser,
+                "Нельзя сбрасывать пароль собственного аккаунта",
+                "Сбрасывать пароль аккаунта Админа может только супер Админ",
+                "Сбрасывать пароль аккаунта барбера могут только Админы филиала к которому барбер привязан"
+        );
+
+        String temporaryPassword = passwordGenerator.generatePassword();
+
+        staffAccount.setPasswordHash(passwordEncoder.encode(temporaryPassword));
+        staffAccount.setLockedUntil(null);
+        staffAccount.setMustChangePassword(true);
+        staffAccount.setFailedLoginAttempts(0);
+
+        refreshTokenService.revokeAllForSubject(staffAccount.getId(), SubjectType.STAFF);
+        repository.save(staffAccount);
+
+        log.info("Админ (ID - {}) сбросил пароль Сотрудника(ID - {})",
+                currentUser.subjectId(), staffAccount.getId());
+
+        StaffAccountCreateResponse response = new StaffAccountCreateResponse();
+        response.setId(staffAccount.getId());
+        response.setPhoneNumber(staffAccount.getPhoneNumber());
+        response.setTemporaryPassword(temporaryPassword);
+        response.setRole(staffAccount.getRole());
+
+        return response;
+    }
+
     @Transactional
     public StaffAccountResponse statusUpdate(UUID id, StatusUpdateRequest request){
         StaffAccountEntity staffAccount = getById(id);
         AuthenticatedUser currentUser = currentUserProvider.getCurrentUser();
 
-        checkCurrentUser(staffAccount, currentUser);
+        checkCurrentUser(
+                staffAccount,
+                currentUser,
+                "Нельзя менять статус собственного аккаунта",
+                "Редактировать статус аккаунта Админа может только супер Админ",
+                "Редактировать статус аккаунта барбера могут только Админы филиала к которому барбер привязан"
+        );
 
         if(currentUser.isSuperAdmin()
                 && staffAccount.getRole().equals(StaffRole.SUPER_ADMIN)
@@ -80,7 +131,6 @@ public class StaffAccountService {
 
         return mapper.toResponse(staffAccount);
     }
-
 
     @Transactional
     public StaffAccountCreateResponse create(StaffAccountCreateRequest request) {
@@ -270,19 +320,24 @@ public class StaffAccountService {
         return repository.findByPhoneNumber(phoneNumber);
     }
 
-    private void checkCurrentUser(StaffAccountEntity staffAccount, AuthenticatedUser currentUser){
+    private void checkCurrentUser(
+            StaffAccountEntity staffAccount,
+            AuthenticatedUser currentUser,
+            String firstRule,
+            String secondRule,
+            String thirdRule){
 
         if(staffAccount.getId().equals(currentUser.subjectId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Нельзя менять статус собственного аккаунта"
+                    firstRule
             );
         }
 
         if(currentUser.isBranchAdmin() && !staffAccount.getRole().equals(StaffRole.BARBER)) {
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Редактировать статус аккаунта Админа может только супер Админ"
+                    secondRule
             );
         }
 
@@ -290,7 +345,7 @@ public class StaffAccountService {
                 !currentUser.belongsToBranch(staffAccount.getBranchEntity().getId())){
             throw new BusinessRuleViolationException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
-                    "Редактировать статус аккаунта барбера могут только Админы филиала к которому барбер привязан"
+                    thirdRule
             );
         }
     }
