@@ -85,7 +85,6 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
             @Param("fromDate") LocalDate fromDate,
             @Param("fromTime") LocalTime fromTime
     );
-    Page<AppointmentEntity> findAllByStatus(AppointmentStatus status, Pageable pageable);
 
     Boolean existsByBarberEntity_IdAndAppointmentDateAndStatus(
             UUID barberEntity, LocalDate date, AppointmentStatus status);

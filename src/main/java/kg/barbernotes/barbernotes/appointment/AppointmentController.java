@@ -45,7 +45,7 @@ public class AppointmentController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public AppointmentResponse getAppointmentById(@PathVariable UUID id){
-        return bookingService.findById(id);
+        return bookingService.checkAccessById(id);
     }
 
     @PostMapping

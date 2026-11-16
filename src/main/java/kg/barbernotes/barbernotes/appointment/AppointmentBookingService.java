@@ -100,6 +100,12 @@ public class AppointmentBookingService {
         return appointmentMapper.toResponse(appointment) ;
     }
 
+    @Transactional(readOnly = true)
+    public AppointmentResponse checkAccessById(UUID id){
+        AppointmentEntity appointment = getById(id);
+        checkCurrentUser(appointment);
+        return appointmentMapper.toResponse(appointment);
+    }
 
     @Transactional(readOnly = true)
     public AppointmentResponse findOwnById(UUID customerId, UUID appointmentId) {
@@ -138,11 +144,6 @@ public class AppointmentBookingService {
                                LocalDate fromDate,
                                LocalTime fromTime){
         return  appointmentRepository.hasUpcoming(barberId, status, fromDate, fromTime);
-    }
-
-    @Transactional(readOnly = true)
-    public Boolean existsById(UUID id) {
-        return appointmentRepository.existsById(id);
     }
 
     @Transactional(readOnly = true)
@@ -194,6 +195,8 @@ public class AppointmentBookingService {
         } else if (currentUser.isBranchAdmin()) {
             branchId = currentUser.branchId();
         }
+
+
 
         return appointmentRepository.findAllWithFilters(
                 status, branchId, barberId, customerId, dateFrom, dateTo, pageable

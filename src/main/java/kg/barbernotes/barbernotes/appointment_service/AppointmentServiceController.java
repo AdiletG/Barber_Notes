@@ -24,12 +24,7 @@ public class AppointmentServiceController {
     @GetMapping
     @PreAuthorize("hasAnyRole('BARBER', 'BRANCH_ADMIN', 'SUPER_ADMIN')")
     public List<AppointmentServiceResponse> findAllAppointments(@PathVariable UUID id) {
-        if(!appointmentBookingService.existsById(id)) {
-            throw new EntityNotFoundException(
-                    ErrorCode.APPOINTMENT_NOT_FOUND,
-                    "Запись с таким id не существует"
-            );
-        }
+        appointmentBookingService.checkAccessById(id);
         return appointmentServiceService.findByAppointmentId(id);
     }
 }
