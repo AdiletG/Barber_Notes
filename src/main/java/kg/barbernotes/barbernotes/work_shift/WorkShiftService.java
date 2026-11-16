@@ -60,6 +60,13 @@ public class WorkShiftService {
                 );
             }
 
+            if(!request.getWorkDate().equals(workShift.getWorkDate())) {
+                throw new BusinessRuleViolationException(
+                        ErrorCode.BUSINESS_RULE_VIOLATION,
+                        "Дату смены менять нельзя: удалите смену и создайте новую"
+                );
+            }
+
         List<AppointmentEntity> appointments =
                 appointmentBookingService.getAppointmentByBarberIdAndDate(barber.getId(), workShift.getWorkDate());
 
